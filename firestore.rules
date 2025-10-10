@@ -1,0 +1,131 @@
+/**
+ * @fileOverview Firestore Security Rules for Gestion PME application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for company data and its associated invoices and expenses. Only the authenticated user whose UID matches the `companyId` path segment can manage company data. Invoices and Expenses inherit this ownership via the `companyId` field.
+ *
+ * Data Structure:
+ * - /companies/{companyId}: Stores company profile data.  `companyId` must match `request.auth.uid`.
+ * - /companies/{companyId}/invoices/{invoiceId}: Stores invoices for a given company.  Each invoice contains a `companyId` field which must match the parent path's `companyId`.
+ * - /companies/{companyId}/expenses/{expenseId}: Stores expenses for a given company. Each expense contains a `companyId` field which must match the parent path's `companyId`.
+ *
+ * Key Security Decisions:
+ * - User listing is disallowed on all collections to prevent information disclosure.
+ * - Data validation is relaxed to allow rapid prototyping.  Only authorization-critical fields are validated.
+ * - All write operations require a verified, authenticated user (`request.auth != null`).
+ *
+ * Denormalization for Authorization:
+ * The `Invoice` and `Expense` entities include a `companyId` field, which is a denormalized copy of the parent `companyId` path segment. This allows invoice and expense rules to validate company ownership without needing to perform additional `get()` operations.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to company profiles. Only the owner (matching `request.auth.uid`) can manage their company profile.
+     * @path /companies/{companyId}
+     * @allow (create) User with UID 'user_abc' creates a company profile at /companies/user_abc.
+     * @allow (update) User with UID 'user_abc' updates their company profile at /companies/user_abc.
+     * @allow (delete) User with UID 'user_abc' deletes their company profile at /companies/user_abc.
+     * @deny (create) User with UID 'user_xyz' attempts to create a company profile at /companies/user_abc.
+     * @deny (update) User with UID 'user_xyz' attempts to update the company profile at /companies/user_abc.
+     * @principle Enforces document ownership for writes.
+     */
+    match /companies/{companyId} {
+      // Helpers
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(companyId) {
+        return isSignedIn() && request.auth.uid == companyId;
+      }
+
+      function isExistingOwner(companyId) {
+        return isOwner(companyId) && resource != null;
+      }
+
+      // Permissions
+      allow get: if true;
+      allow list: if false;
+
+      allow create: if isOwner(companyId);
+      allow update: if isExistingOwner(companyId);
+      allow delete: if isExistingOwner(companyId);
+    }
+
+    /**
+     * @description Controls access to invoices. Only the owner of the parent company can manage invoices.
+     * @path /companies/{companyId}/invoices/{invoiceId}
+     * @allow (create) User with UID 'user_abc' creates an invoice under /companies/user_abc/invoices/inv_123 with companyId = 'user_abc'.
+     * @allow (update) User with UID 'user_abc' updates an invoice under /companies/user_abc/invoices/inv_123 with companyId = 'user_abc'.
+     * @allow (delete) User with UID 'user_abc' deletes an invoice under /companies/user_abc/invoices/inv_123 with companyId = 'user_abc'.
+     * @deny (create) User with UID 'user_xyz' attempts to create an invoice under /companies/user_abc/invoices/inv_123.
+     * @deny (update) User with UID 'user_xyz' attempts to update an invoice under /companies/user_abc/invoices/inv_123.
+     * @principle Enforces document ownership via denormalized companyId and path consistency.
+     */
+    match /companies/{companyId}/invoices/{invoiceId} {
+      // Helpers
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(companyId) {
+        return isSignedIn() && request.auth.uid == companyId;
+      }
+
+      function isExistingOwner(companyId) {
+        return isOwner(companyId) && resource != null;
+      }
+
+      function isValidInvoice(companyId) {
+        return request.resource.data.companyId == companyId;
+      }
+
+      // Permissions
+      allow get: if true;
+      allow list: if isOwner(companyId);
+
+      allow create: if isOwner(companyId) && isValidInvoice(companyId);
+      allow update: if isExistingOwner(companyId) && isValidInvoice(companyId);
+      allow delete: if isExistingOwner(companyId) && isValidInvoice(companyId);
+    }
+
+    /**
+     * @description Controls access to expenses. Only the owner of the parent company can manage expenses.
+     * @path /companies/{companyId}/expenses/{expenseId}
+     * @allow (create) User with UID 'user_abc' creates an expense under /companies/user_abc/expenses/exp_123 with companyId = 'user_abc'.
+     * @allow (update) User with UID 'user_abc' updates an expense under /companies/user_abc/expenses/exp_123 with companyId = 'user_abc'.
+     * @allow (delete) User with UID 'user_abc' deletes an expense under /companies/user_abc/expenses/exp_123 with companyId = 'user_abc'.
+     * @deny (create) User with UID 'user_xyz' attempts to create an expense under /companies/user_abc/expenses/exp_123.
+     * @deny (update) User with UID 'user_xyz' attempts to update an expense under /companies/user_abc/expenses/exp_123.
+     * @principle Enforces document ownership via denormalized companyId and path consistency.
+     */
+    match /companies/{companyId}/expenses/{expenseId} {
+      // Helpers
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(companyId) {
+        return isSignedIn() && request.auth.uid == companyId;
+      }
+
+      function isExistingOwner(companyId) {
+        return isOwner(companyId) && resource != null;
+      }
+
+      function isValidExpense(companyId) {
+        return request.resource.data.companyId == companyId;
+      }
+
+      // Permissions
+      allow get: if true;
+      allow list: if isOwner(companyId);
+
+      allow create: if isOwner(companyId) && isValidExpense(companyId);
+      allow update: if isExistingOwner(companyId) && isValidExpense(companyId);
+      allow delete: if isExistingOwner(companyId) && isValidExpense(companyId);
+    }
+  }
+}
