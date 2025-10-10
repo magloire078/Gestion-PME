@@ -26,6 +26,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocki
 import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const formSchema = z.object({
   companyName: z.string().min(2, "Le nom de l'entreprise doit comporter au moins 2 caractères."),
@@ -81,11 +82,9 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-             <div className="flex items-center space-x-4">
-                <div className="space-y-2 w-full">
-                    <div className="h-4 bg-muted rounded w-1/4 animate-pulse"></div>
-                    <div className="h-10 bg-muted rounded w-full animate-pulse"></div>
-                </div>
+             <div className="space-y-4">
+                <Skeleton className="h-5 w-1/4" />
+                <Skeleton className="h-10 w-full" />
              </div>
           ) : (
             <Form {...form}>

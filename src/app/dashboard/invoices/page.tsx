@@ -46,6 +46,7 @@ import { formatCurrency } from "@/lib/data";
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // This is a temporary type, we should get this from a better source
 interface Invoice {
@@ -93,7 +94,7 @@ export default function InvoicesPage() {
       invoiceNumber: `INV-2024-${String((invoices?.length || 0) + 1).padStart(3, "0")}`,
       clientName: formData.get("clientName") as string,
       amount: parseFloat(formData.get("amount") as string),
-      status: "En attente",
+      status: "En attente" as const,
       issueDate: new Date().toISOString(),
       dueDate: new Date(formData.get("dueDate") as string).toISOString(),
       companyId: user!.uid,
@@ -208,17 +209,32 @@ export default function InvoicesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">Chargement...</TableCell>
-              </TableRow>
-            )}
+            {isLoading &&
+              [...Array(5)].map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-4 w-24 ml-auto" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-8 w-8 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))}
             {!isLoading && invoices?.map((invoice) => (
               <TableRow key={invoice.id}>
                 <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                 <TableCell>{invoice.clientName}</TableCell>
                 <TableCell>
-                  <Badge variant={getStatusBadgeVariant(invoice.status)} className={invoice.status === 'Payée' ? 'bg-accent text-accent-foreground' : ''}>
+                  <Badge variant={getStatusBadgeVariant(invoice.status)} className={invoice.status === 'Payée' ? 'bg-primary text-primary-foreground' : ''}>
                     {invoice.status}
                   </Badge>
                 </TableCell>
@@ -305,5 +321,3 @@ export default function InvoicesPage() {
     </div>
   );
 }
-
-    

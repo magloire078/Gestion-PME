@@ -51,6 +51,7 @@ import { formatCurrency } from "@/lib/data";
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // This is a temporary type, we should get this from a better source
 interface Expense {
@@ -199,11 +200,26 @@ export default function ExpensesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && (
-                <TableRow>
-                    <TableCell colSpan={5} className="text-center">Chargement...</TableCell>
+            {isLoading &&
+              [...Array(5)].map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-3/5" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-2/5" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-4 w-20 ml-auto" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-8 w-8 ml-auto" />
+                  </TableCell>
                 </TableRow>
-            )}
+              ))}
             {!isLoading && expenses?.map((expense) => (
               <TableRow key={expense.id}>
                 <TableCell className="font-medium">{expense.description}</TableCell>
