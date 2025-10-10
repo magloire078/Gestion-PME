@@ -23,6 +23,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/logo";
+import { useAuth } from "@/firebase";
+import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
+import { useToast } from "@/hooks/use-toast";
+import { FirebaseError } from "firebase/app";
 
 const formSchema = z.object({
   email: z.string().email("Adresse e-mail invalide."),
@@ -31,6 +35,8 @@ const formSchema = z.object({
 
 export default function SignInPage() {
   const router = useRouter();
+  const auth = useAuth();
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -39,11 +45,24 @@ export default function SignInPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // NOTE: This is a mock implementation.
-    // In a real application, you would handle authentication here.
-    console.log(values);
-    router.push("/dashboard");
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await initiateEmailSignIn(auth, values.email, values.password);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error(error);
+      let description = "Une erreur inattendue s'est produite.";
+      if (error instanceof FirebaseError) {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          description = "L'adresse e-mail ou le mot de passe est incorrect.";
+        }
+      }
+      toast({
+        variant: "destructive",
+        title: "Erreur de connexion",
+        description,
+      });
+    }
   }
 
   return (
@@ -86,8 +105,8 @@ export default function SignInPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">
-              Se connecter
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Connexion en cours..." : "Se connecter"}
             </Button>
           </form>
         </Form>

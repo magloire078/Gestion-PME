@@ -23,6 +23,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/logo";
+import { useAuth, useFirestore } from "@/firebase";
+import { initiateEmailSignUp } from "@/firebase/non-blocking-login";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { useToast } from "@/hooks/use-toast";
+import { FirebaseError } from "firebase/app";
+import { doc } from "firebase/firestore";
 
 const formSchema = z.object({
   companyName: z.string().min(2, "Le nom de l'entreprise doit comporter au moins 2 caractères."),
@@ -32,6 +38,9 @@ const formSchema = z.object({
 
 export default function SignUpPage() {
   const router = useRouter();
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -41,11 +50,33 @@ export default function SignUpPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // NOTE: This is a mock implementation.
-    // In a real application, you would handle user registration here.
-    console.log(values);
-    router.push("/dashboard");
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const userCredential = await initiateEmailSignUp(auth, values.email, values.password);
+      
+      if (userCredential && userCredential.user) {
+        const companyRef = doc(firestore, "companies", userCredential.user.uid);
+        await setDocumentNonBlocking(companyRef, {
+          name: values.companyName,
+          creationDate: new Date().toISOString(),
+        }, { merge: true });
+
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error(error);
+      let description = "Une erreur inattendue s'est produite.";
+      if (error instanceof FirebaseError) {
+        if (error.code === 'auth/email-already-in-use') {
+          description = "Cette adresse e-mail est déjà utilisée.";
+        }
+      }
+      toast({
+        variant: "destructive",
+        title: "Erreur d'inscription",
+        description,
+      });
+    }
   }
 
   return (
@@ -101,8 +132,8 @@ export default function SignUpPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-              Créer le compte
+            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Création en cours..." : "Créer le compte"}
             </Button>
           </form>
         </Form>

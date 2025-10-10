@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   DollarSign,
   FileText,
@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/components/logo";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth, useUser } from "@/firebase";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
@@ -34,34 +35,41 @@ const navItems = [
 ];
 
 function UserNav() {
+  const auth = useAuth();
+  const { user } = useUser();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await auth.signOut();
+    router.push("/");
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="secondary" size="icon" className="rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src="https://picsum.photos/seed/user-avatar/40/40"
+              src={user?.photoURL ?? "https://picsum.photos/seed/user-avatar/40/40"}
               alt="Avatar"
               data-ai-hint="person avatar"
             />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarFallback>{user?.email?.charAt(0).toUpperCase() ?? 'U'}</AvatarFallback>
           </Avatar>
           <span className="sr-only">Toggle user menu</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
+        <DropdownMenuLabel>{user?.displayName ?? user?.email ?? 'Mon Compte'}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <Settings className="mr-2 h-4 w-4" />
           Paramètres
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/">
-            <LogOut className="mr-2 h-4 w-4" />
-            Se déconnecter
-          </Link>
+        <DropdownMenuItem onClick={handleSignOut}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Se déconnecter
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -112,6 +120,23 @@ function MobileNav() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
+
+    useEffect(() => {
+      if (!isUserLoading && !user) {
+        router.push("/auth/signin");
+      }
+    }, [user, isUserLoading, router]);
+
+    if (isUserLoading || !user) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="loader">Chargement...</div>
+        </div>
+      );
+    }
+    
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-card md:block">
