@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "hero-dashboard",
-      "description": "A clean and modern dashboard interface for a business management app.",
-      "imageUrl": "https://picsum.photos/seed/financial-management/1200/900",
-      "imageHint": "financial management"
+      "description": "An economic graph showing financial trends.",
+      "imageUrl": "https://picsum.photos/seed/economic-graph/1200/900",
+      "imageHint": "economic graph"
     }
   ]
 }
