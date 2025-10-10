@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -98,6 +97,10 @@ export default function SettingsPage() {
             title: "Avatar mis à jour",
             description: "Votre nouvelle image de profil a été enregistrée.",
         });
+        // This is a bit of a hack to force a re-render of the user object
+        // in the useUser hook, which will then update the avatar in the layout.
+        // A more robust solution might involve a global state management library.
+        window.location.reload();
     } catch (error) {
         console.error("Error uploading avatar:", error);
         toast({

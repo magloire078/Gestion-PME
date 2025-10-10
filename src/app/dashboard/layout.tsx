@@ -58,9 +58,8 @@ function UserNav() {
         <Button variant="secondary" size="icon" className="rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={user?.photoURL ?? "https://picsum.photos/seed/user-avatar/40/40"}
+              src={user?.photoURL ?? undefined}
               alt="Avatar"
-              data-ai-hint="person avatar"
             />
             <AvatarFallback>{user?.email?.charAt(0).toUpperCase() ?? 'U'}</AvatarFallback>
           </Avatar>
