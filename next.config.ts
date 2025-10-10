@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
         hostname: 'www.mucadis.fr',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'copilot.microsoft.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
