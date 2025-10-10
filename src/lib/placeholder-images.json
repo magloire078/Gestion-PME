@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "hero-dashboard",
-      "description": "An economic graph showing financial trends.",
-      "imageUrl": "https://picsum.photos/seed/economic-graph/1200/900",
-      "imageHint": "economic graph"
+      "description": "Analyse de résultat financier.",
+      "imageUrl": "https://www.mucadis.fr/wp-content/uploads/2015/09/analyse_resultat.png",
+      "imageHint": "financial analysis"
     }
   ]
 }
