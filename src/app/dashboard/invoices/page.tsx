@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -27,16 +27,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+  } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/data";
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 // This is a temporary type, we should get this from a better source
 interface Invoice {
   id: string;
+  invoiceNumber: string;
   clientName: string;
   amount: number;
   status: 'Payée' | 'En attente' | 'En retard';
@@ -56,9 +69,12 @@ function getStatusBadgeVariant(status: Invoice["status"]) {
 }
 
 export default function InvoicesPage() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const invoicesCollectionRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -73,7 +89,7 @@ export default function InvoicesPage() {
 
     const formData = new FormData(event.currentTarget);
     const newInvoice = {
-      invoiceNumber: `INV-${String((invoices?.length || 0) + 1).padStart(3, "0")}`,
+      invoiceNumber: `INV-2024-${String((invoices?.length || 0) + 1).padStart(3, "0")}`,
       clientName: formData.get("clientName") as string,
       amount: parseFloat(formData.get("amount") as string),
       status: "En attente",
@@ -82,14 +98,46 @@ export default function InvoicesPage() {
       companyId: user!.uid,
     };
     addDocumentNonBlocking(invoicesCollectionRef, newInvoice);
-    setIsDialogOpen(false);
+    toast({ title: "Facture créée", description: `La facture pour ${newInvoice.clientName} a été ajoutée.` });
+    setIsAddDialogOpen(false);
   };
+
+  const handleUpdateInvoice = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedInvoice || !user) return;
+
+    const formData = new FormData(event.currentTarget);
+    const updatedInvoice = {
+      clientName: formData.get("clientName") as string,
+      amount: parseFloat(formData.get("amount") as string),
+      dueDate: new Date(formData.get("dueDate") as string).toISOString(),
+    };
+    
+    const invoiceRef = doc(firestore, `companies/${user.uid}/invoices`, selectedInvoice.id);
+    updateDocumentNonBlocking(invoiceRef, updatedInvoice);
+    toast({ title: "Facture modifiée", description: "Les détails de la facture ont été mis à jour." });
+    setIsEditDialogOpen(false);
+    setSelectedInvoice(null);
+  };
+
+  const handleDeleteInvoice = () => {
+    if (!selectedInvoice || !user) return;
+    const invoiceRef = doc(firestore, `companies/${user.uid}/invoices`, selectedInvoice.id);
+    deleteDocumentNonBlocking(invoiceRef);
+    toast({ title: "Facture supprimée", description: "La facture a été supprimée avec succès." });
+    setSelectedInvoice(null);
+  }
+
+  const openEditDialog = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsEditDialogOpen(true);
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Factures</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -143,6 +191,7 @@ export default function InvoicesPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Numéro</TableHead>
               <TableHead>Client</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right">Montant</TableHead>
@@ -152,12 +201,13 @@ export default function InvoicesPage() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">Chargement...</TableCell>
+                <TableCell colSpan={5} className="text-center">Chargement...</TableCell>
               </TableRow>
             )}
             {!isLoading && invoices?.map((invoice) => (
               <TableRow key={invoice.id}>
-                <TableCell className="font-medium">{invoice.clientName}</TableCell>
+                <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                <TableCell>{invoice.clientName}</TableCell>
                 <TableCell>
                   <Badge variant={getStatusBadgeVariant(invoice.status)} className={invoice.status === 'Payée' ? 'bg-accent text-accent-foreground' : ''}>
                     {invoice.status}
@@ -176,8 +226,24 @@ export default function InvoicesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Modifier</DropdownMenuItem>
-                      <DropdownMenuItem>Supprimer</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openEditDialog(invoice)}>Modifier</DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Supprimer</DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                Cette action est irréversible. La facture sera définitivement supprimée.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setSelectedInvoice(null)}>Annuler</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteInvoice()}>Supprimer</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -186,6 +252,41 @@ export default function InvoicesPage() {
           </TableBody>
         </Table>
       </div>
+      
+      {selectedInvoice && (
+        <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => {
+            if (!isOpen) setSelectedInvoice(null);
+            setIsEditDialogOpen(isOpen);
+        }}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Modifier la facture</DialogTitle>
+              <DialogDescription>
+                Mettez à jour les détails de la facture.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdateInvoice}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editClientName" className="text-right">Client</Label>
+                  <Input id="editClientName" name="clientName" defaultValue={selectedInvoice.clientName} className="col-span-3" required />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editAmount" className="text-right">Montant</Label>
+                  <Input id="editAmount" name="amount" type="number" step="0.01" defaultValue={selectedInvoice.amount} className="col-span-3" required />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="editDueDate" className="text-right">Échéance</Label>
+                  <Input id="editDueDate" name="dueDate" type="date" defaultValue={selectedInvoice.dueDate.substring(0, 10)} className="col-span-3" required />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">Enregistrer</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
