@@ -32,6 +32,7 @@ const navItems = [
   { href: "/dashboard/invoices", icon: FileText, label: "Factures" },
   { href: "/dashboard/expenses", icon: DollarSign, label: "Dépenses" },
   { href: "/dashboard/reports", icon: LineChart, label: "Rapports" },
+  { href: "/dashboard/settings", icon: Settings, label: "Paramètres" },
 ];
 
 function UserNav() {
@@ -62,10 +63,12 @@ function UserNav() {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>{user?.displayName ?? user?.email ?? 'Mon Compte'}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
-          Paramètres
-        </DropdownMenuItem>
+        <Link href="/dashboard/settings">
+            <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                Paramètres
+            </DropdownMenuItem>
+        </Link>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
