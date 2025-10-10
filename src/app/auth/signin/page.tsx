@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -53,8 +54,18 @@ export default function SignInPage() {
       console.error(error);
       let description = "Une erreur inattendue s'est produite.";
       if (error instanceof FirebaseError) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          description = "L'adresse e-mail ou le mot de passe est incorrect.";
+        switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            description = "L'adresse e-mail ou le mot de passe est incorrect.";
+            break;
+          case 'auth/too-many-requests':
+            description = "Trop de tentatives de connexion. Veuillez réessayer plus tard.";
+            break;
+          default:
+            description = "Une erreur est survenue lors de la connexion.";
+            break;
         }
       }
       toast({
