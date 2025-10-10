@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 export const metadata: Metadata = {
   title: 'Gestion PME',
   description: 'Gérez votre petite ou moyenne entreprise en toute simplicité.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

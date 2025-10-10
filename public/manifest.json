@@ -1,0 +1,21 @@
+{
+  "name": "Gestion PME",
+  "short_name": "GestionPME",
+  "description": "Gérez votre petite ou moyenne entreprise en toute simplicité.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1c64f2",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
