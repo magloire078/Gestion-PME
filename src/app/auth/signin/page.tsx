@@ -51,25 +51,20 @@ export default function SignInPage() {
       await initiateEmailSignIn(auth, values.email, values.password);
       router.push("/dashboard");
     } catch (error) {
-      console.error(error);
-      let description = "Une erreur inattendue s'est produite.";
+      let description = "Une erreur inattendue s'est produite. Veuillez réessayer.";
+      
       if (error instanceof FirebaseError) {
-        switch (error.code) {
-          case 'auth/invalid-credential':
-            description = "L'adresse e-mail ou le mot de passe est incorrect. Veuillez vérifier vos informations.";
-            break;
-          case 'auth/user-not-found':
-          case 'auth/wrong-password':
-            description = "L'adresse e-mail ou le mot de passe est incorrect.";
-            break;
-          case 'auth/too-many-requests':
-            description = "Trop de tentatives de connexion. Veuillez réessayer plus tard.";
-            break;
-          default:
-            description = "Une erreur est survenue lors de la connexion.";
-            break;
+        if (error.code === 'auth/invalid-credential') {
+          description = "L'adresse e-mail ou le mot de passe est incorrect. Veuillez vérifier vos informations.";
+        } else if (error.code === 'auth/too-many-requests') {
+          description = "Trop de tentatives de connexion. Veuillez réessayer plus tard.";
+        } else {
+            console.error("Firebase Auth Error:", error);
         }
+      } else {
+        console.error("Unexpected Error:", error);
       }
+
       toast({
         variant: "destructive",
         title: "Erreur de connexion",
