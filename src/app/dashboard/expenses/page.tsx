@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -54,7 +54,7 @@ import {
   } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, ArrowUpDown } from "lucide-react";
 import { formatCurrency } from "@/lib/data";
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
@@ -69,6 +69,8 @@ interface Expense {
     amount: number;
     date: string;
   };
+
+type SortKey = keyof Omit<Expense, 'id' | 'companyId'>;
 
 const expenseCategories: Expense["category"][] = [
   "Marketing",
@@ -122,6 +124,7 @@ export default function ExpensesPage() {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+    const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -132,6 +135,39 @@ export default function ExpensesPage() {
     }, [firestore, user]);
 
     const { data: expenses, isLoading } = useCollection<Omit<Expense, 'id'>>(expensesCollectionRef);
+
+    const sortedExpenses = useMemo(() => {
+        let sortableItems = expenses ? [...expenses] : [];
+        if (sortConfig.key) {
+          sortableItems.sort((a, b) => {
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+            if (aValue < bValue) {
+              return sortConfig.direction === 'ascending' ? -1 : 1;
+            }
+            if (aValue > bValue) {
+              return sortConfig.direction === 'ascending' ? 1 : -1;
+            }
+            return 0;
+          });
+        }
+        return sortableItems;
+      }, [expenses, sortConfig]);
+
+    const requestSort = (key: SortKey) => {
+        let direction: 'ascending' | 'descending' = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortIcon = (key: SortKey) => {
+        if (sortConfig.key !== key) {
+            return <ArrowUpDown className="ml-2 h-4 w-4" />;
+        }
+        return sortConfig.direction === 'ascending' ? <ArrowUpDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />;
+    };
 
 
     const handleAddExpense = (event: React.FormEvent<HTMLFormElement>) => {
@@ -244,7 +280,7 @@ export default function ExpensesPage() {
                 <CardContent><div className="space-y-2"><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-3/5" /></div></CardContent>
             </Card>
         ))}
-        {!isLoading && expenses?.map((expense) => (
+        {!isLoading && sortedExpenses?.map((expense) => (
             <Card key={expense.id}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div>
@@ -273,10 +309,26 @@ export default function ExpensesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Description</TableHead>
-              <TableHead>Catégorie</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Montant</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('description')} className="px-0">
+                  Description {getSortIcon('description')}
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('category')} className="px-0">
+                    Catégorie {getSortIcon('category')}
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('date')} className="px-0">
+                    Date {getSortIcon('date')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('amount')} className="px-0">
+                    Montant {getSortIcon('amount')}
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -301,7 +353,7 @@ export default function ExpensesPage() {
                   </TableCell>
                 </TableRow>
               ))}
-            {!isLoading && expenses?.map((expense) => (
+            {!isLoading && sortedExpenses?.map((expense) => (
               <TableRow key={expense.id}>
                 <TableCell className="font-medium">{expense.description}</TableCell>
                 <TableCell>{expense.category}</TableCell>

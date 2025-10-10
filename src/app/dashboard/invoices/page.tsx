@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -49,7 +49,7 @@ import {
   } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, ArrowUpDown } from "lucide-react";
 import { formatCurrency } from "@/lib/data";
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
@@ -66,6 +66,8 @@ interface Invoice {
   issueDate: string;
   dueDate: string;
 }
+
+type SortKey = keyof Omit<Invoice, 'id' | 'companyId'>;
 
 function getStatusBadgeVariant(status: Invoice["status"]) {
   switch (status) {
@@ -128,6 +130,7 @@ export default function InvoicesPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' }>({ key: 'issueDate', direction: 'descending' });
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -138,6 +141,39 @@ export default function InvoicesPage() {
   }, [firestore, user]);
 
   const { data: invoices, isLoading } = useCollection<Omit<Invoice, 'id'>>(invoicesCollectionRef);
+  
+  const sortedInvoices = useMemo(() => {
+    let sortableItems = invoices ? [...invoices] : [];
+    if (sortConfig.key) {
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [invoices, sortConfig]);
+
+  const requestSort = (key: SortKey) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key: SortKey) => {
+    if (sortConfig.key !== key) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    return sortConfig.direction === 'ascending' ? <ArrowUpDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />;
+  };
 
   const handleAddInvoice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -256,7 +292,7 @@ export default function InvoicesPage() {
         {isLoading && [...Array(3)].map((_, i) => (
             <Card key={i}><CardHeader><Skeleton className="h-6 w-3/5" /></CardHeader><CardContent><div className="space-y-2"><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-3/5" /></div></CardContent></Card>
         ))}
-        {!isLoading && invoices?.map((invoice) => (
+        {!isLoading && sortedInvoices?.map((invoice) => (
             <Card key={invoice.id}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div>
@@ -290,10 +326,26 @@ export default function InvoicesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Numéro</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead className="text-right">Montant</TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('invoiceNumber')} className="px-0">
+                        Numéro {getSortIcon('invoiceNumber')}
+                    </Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('clientName')} className="px-0">
+                        Client {getSortIcon('clientName')}
+                    </Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('status')} className="px-0">
+                        Statut {getSortIcon('status')}
+                    </Button>
+                </TableHead>
+                <TableHead className="text-right">
+                    <Button variant="ghost" onClick={() => requestSort('amount')} className="px-0">
+                        Montant {getSortIcon('amount')}
+                    </Button>
+                </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -318,7 +370,7 @@ export default function InvoicesPage() {
                   </TableCell>
                 </TableRow>
               ))}
-            {!isLoading && invoices?.map((invoice) => (
+            {!isLoading && sortedInvoices?.map((invoice) => (
               <TableRow key={invoice.id}>
                 <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                 <TableCell>{invoice.clientName}</TableCell>
