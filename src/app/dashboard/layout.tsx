@@ -10,8 +10,11 @@ import {
   LineChart,
   LogOut,
   Menu,
+  Moon,
   Settings,
+  Sun,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -46,6 +49,7 @@ function UserNav() {
   const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
+  const { setTheme } = useTheme();
 
   const handleSignOut = async () => {
     await auth.signOut();
@@ -75,6 +79,15 @@ function UserNav() {
                 Paramètres
             </DropdownMenuItem>
         </Link>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => setTheme("light")}>
+            <Sun className="mr-2 h-4 w-4" />
+            Clair
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("dark")}>
+            <Moon className="mr-2 h-4 w-4" />
+            Sombre
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
