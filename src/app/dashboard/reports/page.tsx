@@ -87,7 +87,7 @@ export default function ReportsPage() {
             {report && (
               <div
                 className="prose prose-sm max-w-none dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: report.replace(/\n/g, '<br />') }}
+                dangerouslySetInnerHTML={{ __html: report }}
               />
             )}
           </CardContent>
