@@ -55,9 +55,11 @@ export default function SignInPage() {
       let description = "Une erreur inattendue s'est produite.";
       if (error instanceof FirebaseError) {
         switch (error.code) {
+          case 'auth/invalid-credential':
+            description = "L'adresse e-mail ou le mot de passe est incorrect. Veuillez vérifier vos informations.";
+            break;
           case 'auth/user-not-found':
           case 'auth/wrong-password':
-          case 'auth/invalid-credential':
             description = "L'adresse e-mail ou le mot de passe est incorrect.";
             break;
           case 'auth/too-many-requests':
