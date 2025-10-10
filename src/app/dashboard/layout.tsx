@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -25,7 +26,9 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/components/logo";
 import { useState, useEffect } from "react";
-import { useAuth, useUser } from "@/firebase";
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
@@ -34,6 +37,10 @@ const navItems = [
   { href: "/dashboard/reports", icon: LineChart, label: "Rapports" },
   { href: "/dashboard/settings", icon: Settings, label: "Paramètres" },
 ];
+
+interface Company {
+    name: string;
+}
 
 function UserNav() {
   const auth = useAuth();
@@ -125,6 +132,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const pathname = usePathname();
     const { user, isUserLoading } = useUser();
     const router = useRouter();
+    const firestore = useFirestore();
+
+    const companyRef = useMemoFirebase(() => {
+        if (!user) return null;
+        return doc(firestore, "companies", user.uid);
+      }, [firestore, user]);
+    
+    const { data: company, isLoading: isCompanyLoading } = useDoc<Company>(companyRef);
 
     useEffect(() => {
       if (!isUserLoading && !user) {
@@ -144,9 +159,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-card md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+          <div className="flex h-auto flex-col items-center border-b px-4 py-4 lg:h-auto lg:px-6">
+            <Link href="/dashboard" className="flex flex-col items-center gap-2 font-semibold">
               <Logo />
+              {isCompanyLoading ? (
+                <Skeleton className="h-4 w-32 mt-1" />
+              ) : (
+                company && <span className="text-xs text-muted-foreground">{company.name}</span>
+              )}
             </Link>
           </div>
           <div className="flex-1">
