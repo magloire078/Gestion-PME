@@ -28,7 +28,7 @@ export function OverviewChart() {
           fontSize={12}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(value) => formatCurrency(value as number).replace('€', '€ ')}
+          tickFormatter={(value) => formatCurrency(value as number).replace('F\u202FCFA', 'F CFA')}
         />
         <Tooltip
             contentStyle={{
