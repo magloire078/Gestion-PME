@@ -16,6 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -100,6 +101,7 @@ export default function InvoicesPage() {
     addDocumentNonBlocking(invoicesCollectionRef, newInvoice);
     toast({ title: "Facture créée", description: `La facture pour ${newInvoice.clientName} a été ajoutée.` });
     setIsAddDialogOpen(false);
+    (event.target as HTMLFormElement).reset();
   };
 
   const handleUpdateInvoice = (event: React.FormEvent<HTMLFormElement>) => {
@@ -127,6 +129,13 @@ export default function InvoicesPage() {
     toast({ title: "Facture supprimée", description: "La facture a été supprimée avec succès." });
     setSelectedInvoice(null);
   }
+
+  const handleMarkAsPaid = (invoiceId: string) => {
+    if (!user) return;
+    const invoiceRef = doc(firestore, `companies/${user.uid}/invoices`, invoiceId);
+    updateDocumentNonBlocking(invoiceRef, { status: "Payée" });
+    toast({ title: "Statut mis à jour", description: "La facture a été marquée comme payée." });
+  };
 
   const openEditDialog = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
@@ -226,10 +235,16 @@ export default function InvoicesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      {invoice.status !== 'Payée' && (
+                        <DropdownMenuItem onClick={() => handleMarkAsPaid(invoice.id)}>
+                          Marquer comme payée
+                        </DropdownMenuItem>
+                      )}
+                       {invoice.status !== 'Payée' && <DropdownMenuSeparator />}
                       <DropdownMenuItem onClick={() => openEditDialog(invoice)}>Modifier</DropdownMenuItem>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Supprimer</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedInvoice(invoice); }}>Supprimer</DropdownMenuItem>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
@@ -290,3 +305,5 @@ export default function InvoicesPage() {
     </div>
   );
 }
+
+    
