@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -36,8 +36,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
-import { expenses as initialExpenses, formatCurrency } from "@/lib/data";
-import type { Expense } from "@/lib/data";
+import { formatCurrency } from "@/lib/data";
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
+import { collection } from "firebase/firestore";
+
+// This is a temporary type, we should get this from a better source
+interface Expense {
+    id: string;
+    description: string;
+    category: 'Marketing' | 'Logiciels' | 'Fournitures de bureau' | 'Déplacement' | 'Autre';
+    amount: number;
+    date: string;
+  };
 
 const expenseCategories: Expense["category"][] = [
   "Marketing",
@@ -48,21 +58,33 @@ const expenseCategories: Expense["category"][] = [
 ];
 
 export default function ExpensesPage() {
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const expensesCollectionRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `companies/${user.uid}/expenses`);
+  }, [firestore, user]);
+
+  const { data: expenses, isLoading } = useCollection<Omit<Expense, 'id'>>(expensesCollectionRef);
+
 
   const handleAddExpense = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!expensesCollectionRef) return;
+
     const formData = new FormData(event.currentTarget);
-    const newExpense: Expense = {
-      id: `EXP-${String(expenses.length + 1).padStart(3, "0")}`,
-      name: formData.get("name") as string,
+    const newExpense = {
+      description: formData.get("description") as string,
       category: formData.get("category") as Expense['category'],
       amount: parseFloat(formData.get("amount") as string),
-      date: formData.get("date") as string,
+      date: new Date(formData.get("date") as string).toISOString(),
+      companyId: user!.uid,
     };
-    setExpenses([newExpense, ...expenses]);
+    addDocumentNonBlocking(expensesCollectionRef, newExpense);
     setIsDialogOpen(false);
+    (event.target as HTMLFormElement).reset();
   };
 
   return (
@@ -86,8 +108,8 @@ export default function ExpensesPage() {
             <form onSubmit={handleAddExpense}>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">Nom</Label>
-                  <Input id="name" name="name" className="col-span-3" required />
+                  <Label htmlFor="description" className="text-right">Description</Label>
+                  <Input id="description" name="description" className="col-span-3" required />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="category" className="text-right">Catégorie</Label>
@@ -121,7 +143,7 @@ export default function ExpensesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nom</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead>Catégorie</TableHead>
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Montant</TableHead>
@@ -129,9 +151,14 @@ export default function ExpensesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {expenses.map((expense) => (
+            {isLoading && (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center">Chargement...</TableCell>
+                </TableRow>
+            )}
+            {!isLoading && expenses?.map((expense) => (
               <TableRow key={expense.id}>
-                <TableCell className="font-medium">{expense.name}</TableCell>
+                <TableCell className="font-medium">{expense.description}</TableCell>
                 <TableCell>{expense.category}</TableCell>
                 <TableCell>{new Date(expense.date).toLocaleDateString('fr-FR')}</TableCell>
                 <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>

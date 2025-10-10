@@ -1,18 +1,56 @@
 "use client";
 
+import { useMemo } from "react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { formatCurrency } from "@/lib/data";
+import { eachMonthOfInterval, subMonths, format, startOfMonth } from "date-fns";
+import { fr } from 'date-fns/locale';
 
-const data = [
-  { name: "Jan", revenue: 4000, expenses: 2400 },
-  { name: "Fév", revenue: 3000, expenses: 1398 },
-  { name: "Mar", revenue: 5000, expenses: 3800 },
-  { name: "Avr", revenue: 2780, expenses: 1908 },
-  { name: "Mai", revenue: 1890, expenses: 1800 },
-  { name: "Juin", revenue: 2390, expenses: 1800 },
-];
+interface DataPoint {
+    name: string;
+    revenue: number;
+    expenses: number;
+}
 
-export function OverviewChart() {
+interface OverviewChartProps {
+    invoices: { issueDate: string; amount: number; status: 'Payée' | 'En attente' | 'En retard' }[];
+    expenses: { date: string; amount: number }[];
+}
+
+export function OverviewChart({ invoices, expenses }: OverviewChartProps) {
+  const data = useMemo(() => {
+    const sixMonthsAgo = subMonths(new Date(), 5);
+    const months = eachMonthOfInterval({
+      start: sixMonthsAgo,
+      end: new Date(),
+    });
+
+    const monthlyData = months.map(month => ({
+      name: format(month, 'MMM', { locale: fr }),
+      revenue: 0,
+      expenses: 0,
+    }));
+
+    invoices.forEach(invoice => {
+        if (invoice.status === 'Payée') {
+            const monthIndex = months.findIndex(m => startOfMonth(m).getTime() === startOfMonth(new Date(invoice.issueDate)).getTime());
+            if (monthIndex !== -1) {
+                monthlyData[monthIndex].revenue += invoice.amount;
+            }
+        }
+    });
+
+    expenses.forEach(expense => {
+        const monthIndex = months.findIndex(m => startOfMonth(m).getTime() === startOfMonth(new Date(expense.date)).getTime());
+        if (monthIndex !== -1) {
+            monthlyData[monthIndex].expenses += expense.amount;
+        }
+    });
+
+    return monthlyData;
+  }, [invoices, expenses]);
+
+
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data}>

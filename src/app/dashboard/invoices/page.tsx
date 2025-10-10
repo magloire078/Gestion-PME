@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -30,8 +30,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
-import { invoices as initialInvoices, formatCurrency } from "@/lib/data";
-import type { Invoice } from "@/lib/data";
+import { formatCurrency } from "@/lib/data";
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
+
+// This is a temporary type, we should get this from a better source
+interface Invoice {
+  id: string;
+  clientName: string;
+  amount: number;
+  status: 'Payée' | 'En attente' | 'En retard';
+  issueDate: string;
+  dueDate: string;
+}
 
 function getStatusBadgeVariant(status: Invoice["status"]) {
   switch (status) {
@@ -45,21 +56,32 @@ function getStatusBadgeVariant(status: Invoice["status"]) {
 }
 
 export default function InvoicesPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const invoicesCollectionRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `companies/${user.uid}/invoices`);
+  }, [firestore, user]);
+
+  const { data: invoices, isLoading } = useCollection<Omit<Invoice, 'id'>>(invoicesCollectionRef);
 
   const handleAddInvoice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!invoicesCollectionRef) return;
+
     const formData = new FormData(event.currentTarget);
-    const newInvoice: Invoice = {
-      id: `INV-${String(invoices.length + 1).padStart(3, "0")}`,
+    const newInvoice = {
+      invoiceNumber: `INV-${String((invoices?.length || 0) + 1).padStart(3, "0")}`,
       clientName: formData.get("clientName") as string,
       amount: parseFloat(formData.get("amount") as string),
       status: "En attente",
-      issueDate: new Date().toISOString().split("T")[0],
-      dueDate: formData.get("dueDate") as string,
+      issueDate: new Date().toISOString(),
+      dueDate: new Date(formData.get("dueDate") as string).toISOString(),
+      companyId: user!.uid,
     };
-    setInvoices([newInvoice, ...invoices]);
+    addDocumentNonBlocking(invoicesCollectionRef, newInvoice);
     setIsDialogOpen(false);
   };
 
@@ -128,7 +150,12 @@ export default function InvoicesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invoices.map((invoice) => (
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center">Chargement...</TableCell>
+              </TableRow>
+            )}
+            {!isLoading && invoices?.map((invoice) => (
               <TableRow key={invoice.id}>
                 <TableCell className="font-medium">{invoice.clientName}</TableCell>
                 <TableCell>

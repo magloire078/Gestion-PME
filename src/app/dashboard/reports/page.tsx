@@ -6,16 +6,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { handleGenerateReport } from "./actions";
 import { Loader2, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/firebase";
 
 export default function ReportsPage() {
   const [report, setReport] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser();
 
   const onGenerate = async () => {
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Erreur",
+            description: "Vous devez être connecté pour générer un rapport.",
+        });
+        return;
+    }
+
     setIsLoading(true);
     setReport(null);
-    const result = await handleGenerateReport();
+    const result = await handleGenerateReport(user.uid);
     setIsLoading(false);
 
     if (result.success) {

@@ -1,3 +1,6 @@
+"use client"
+
+import { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -5,16 +8,50 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { invoices, expenses, formatCurrency } from "@/lib/data";
+import { formatCurrency } from "@/lib/data";
 import { DollarSign, ArrowUpRight, ArrowDownRight, Scale } from "lucide-react";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection } from "firebase/firestore";
+
+interface Invoice {
+  id: string;
+  amount: number;
+  status: 'Payée' | 'En attente' | 'En retard';
+}
+
+interface Expense {
+  id: string;
+  amount: number;
+}
+
 
 export default function DashboardPage() {
-  const totalRevenue = invoices
-    .filter((invoice) => invoice.status === "Payée")
-    .reduce((sum, invoice) => sum + invoice.amount, 0);
+  const { user } = useUser();
+  const firestore = useFirestore();
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const invoicesCollectionRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `companies/${user.uid}/invoices`);
+  }, [firestore, user]);
+
+  const expensesCollectionRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `companies/${user.uid}/expenses`);
+  }, [firestore, user]);
+
+  const { data: invoices } = useCollection<Omit<Invoice, 'id'>>(invoicesCollectionRef);
+  const { data: expenses } = useCollection<Omit<Expense, 'id'>>(expensesCollectionRef);
+
+  const totalRevenue = useMemo(() => 
+    invoices
+    ?.filter((invoice) => invoice.status === "Payée")
+    .reduce((sum, invoice) => sum + invoice.amount, 0) ?? 0
+  , [invoices]);
+
+  const totalExpenses = useMemo(() => 
+    expenses?.reduce((sum, expense) => sum + expense.amount, 0) ?? 0
+  , [expenses]);
 
   const netProfit = totalRevenue - totalExpenses;
 
@@ -72,7 +109,7 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <OverviewChart />
+          <OverviewChart invoices={invoices ?? []} expenses={expenses ?? []} />
         </CardContent>
       </Card>
     </div>
