@@ -13,18 +13,7 @@ import { DollarSign, ArrowUpRight, ArrowDownRight, Scale } from "lucide-react";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
-
-interface Invoice {
-  id: string;
-  amount: number;
-  status: 'Payée' | 'En attente' | 'En retard';
-}
-
-interface Expense {
-  id: string;
-  amount: number;
-}
-
+import type { Invoice, Expense } from "@/lib/types";
 
 export default function DashboardPage() {
   const { user } = useUser();

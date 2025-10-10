@@ -5,16 +5,11 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recha
 import { formatCurrency } from "@/lib/data";
 import { eachMonthOfInterval, subMonths, format, startOfMonth } from "date-fns";
 import { fr } from 'date-fns/locale';
-
-interface DataPoint {
-    name: string;
-    revenue: number;
-    expenses: number;
-}
+import type { Invoice, Expense } from "@/lib/types";
 
 interface OverviewChartProps {
-    invoices: { issueDate: string; amount: number; status: 'Payée' | 'En attente' | 'En retard' }[];
-    expenses: { date: string; amount: number }[];
+    invoices: (Omit<Invoice, 'id'>)[];
+    expenses: (Omit<Expense, 'id'>)[];
 }
 
 export function OverviewChart({ invoices, expenses }: OverviewChartProps) {

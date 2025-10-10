@@ -60,15 +60,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBl
 import { collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// This is a temporary type, we should get this from a better source
-interface Expense {
-    id: string;
-    description: string;
-    category: 'Marketing' | 'Logiciels' | 'Fournitures de bureau' | 'Déplacement' | 'Autre';
-    amount: number;
-    date: string;
-  };
+import type { Expense } from "@/lib/types";
 
 type SortKey = keyof Omit<Expense, 'id' | 'companyId'>;
 

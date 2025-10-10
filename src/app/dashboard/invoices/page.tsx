@@ -55,17 +55,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBl
 import { collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// This is a temporary type, we should get this from a better source
-interface Invoice {
-  id: string;
-  invoiceNumber: string;
-  clientName: string;
-  amount: number;
-  status: 'Payée' | 'En attente' | 'En retard';
-  issueDate: string;
-  dueDate: string;
-}
+import type { Invoice } from "@/lib/types";
 
 type SortKey = keyof Omit<Invoice, 'id' | 'companyId'>;
 
