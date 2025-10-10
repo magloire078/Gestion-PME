@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-dashboard",
+      "description": "A clean and modern dashboard interface for a business management app.",
+      "imageUrl": "https://picsum.photos/seed/gpme-dashboard/1200/900",
+      "imageHint": "dashboard interface"
+    }
+  ]
 }
