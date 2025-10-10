@@ -1,28 +1,28 @@
 "use server";
 
 import { generateFinancialReport } from "@/ai/flows/generate-financial-reports";
-import { getDocs, collection } from "firebase/firestore";
-import { getSdks } from '@/firebase';
-import { getApp, getApps } from "firebase/app";
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
 
-// Temporary helper until we have a better way to get the admin SDK
-function getFirestoreAdmin() {
-    const app = getApps().length ? getApp() : undefined;
-    if (!app) {
-        throw new Error("Firebase app not initialized");
+// Initialize Firebase Admin SDK
+function getAdminApp(): App {
+    if (getApps().length) {
+        return getApps()[0]!;
     }
-    return getSdks(app).firestore;
+    return initializeApp();
 }
 
 export async function handleGenerateReport(userId: string) {
   try {
-    const firestore = getFirestoreAdmin();
-    const invoicesRef = collection(firestore, `companies/${userId}/invoices`);
-    const expensesRef = collection(firestore, `companies/${userId}/expenses`);
+    const app = getAdminApp();
+    const firestore = getFirestore(app);
+    
+    const invoicesRef = firestore.collection(`companies/${userId}/invoices`);
+    const expensesRef = firestore.collection(`companies/${userId}/expenses`);
 
     const [invoicesSnapshot, expensesSnapshot] = await Promise.all([
-        getDocs(invoicesRef),
-        getDocs(expensesRef)
+        invoicesRef.get(),
+        expensesRef.get()
     ]);
 
     const invoices = invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
