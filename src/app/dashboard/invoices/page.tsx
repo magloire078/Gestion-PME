@@ -9,6 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,6 +76,52 @@ function getStatusBadgeVariant(status: Invoice["status"]) {
     case "En retard":
       return "destructive";
   }
+}
+
+function InvoiceActions({ invoice, openEditDialog, setSelectedInvoice, handleMarkAsPaid, handleDeleteInvoice }: {
+    invoice: Invoice;
+    openEditDialog: (invoice: Invoice) => void;
+    setSelectedInvoice: (invoice: Invoice | null) => void;
+    handleMarkAsPaid: (invoiceId: string) => void;
+    handleDeleteInvoice: () => void;
+}) {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button aria-haspopup="true" size="icon" variant="ghost">
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Toggle menu</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                {invoice.status !== 'Payée' && (
+                    <DropdownMenuItem onClick={() => handleMarkAsPaid(invoice.id)}>
+                        Marquer comme payée
+                    </DropdownMenuItem>
+                )}
+                {invoice.status !== 'Payée' && <DropdownMenuSeparator />}
+                <DropdownMenuItem onClick={() => openEditDialog(invoice)}>Modifier</DropdownMenuItem>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedInvoice(invoice); }}>Supprimer</DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Cette action est irréversible. La facture sera définitivement supprimée.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setSelectedInvoice(null)}>Annuler</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteInvoice()}>Supprimer</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
 }
 
 export default function InvoicesPage() {
@@ -197,7 +251,42 @@ export default function InvoicesPage() {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg">
+      {/* Mobile View */}
+      <div className="grid gap-4 md:hidden">
+        {isLoading && [...Array(3)].map((_, i) => (
+            <Card key={i}><CardHeader><Skeleton className="h-6 w-3/5" /></CardHeader><CardContent><div className="space-y-2"><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-3/5" /></div></CardContent></Card>
+        ))}
+        {!isLoading && invoices?.map((invoice) => (
+            <Card key={invoice.id}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                        <CardTitle className="text-base font-bold">{invoice.invoiceNumber}</CardTitle>
+                        <CardDescription>{invoice.clientName}</CardDescription>
+                    </div>
+                    <div className="text-right font-bold text-lg">{formatCurrency(invoice.amount)}</div>
+                </CardHeader>
+                <CardContent className="flex items-center justify-between">
+                    <Badge variant={getStatusBadgeVariant(invoice.status)} className={invoice.status === 'Payée' ? 'bg-primary text-primary-foreground' : ''}>
+                        {invoice.status}
+                    </Badge>
+                     <p className="text-xs text-muted-foreground">Échéance: {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}</p>
+                </CardContent>
+                 <CardFooter className="flex justify-end border-t pt-4">
+                    <InvoiceActions 
+                        invoice={invoice} 
+                        openEditDialog={openEditDialog} 
+                        setSelectedInvoice={setSelectedInvoice}
+                        handleMarkAsPaid={handleMarkAsPaid}
+                        handleDeleteInvoice={handleDeleteInvoice}
+                    />
+                </CardFooter>
+            </Card>
+        ))}
+      </div>
+
+
+      {/* Desktop View */}
+      <div className="hidden md:block border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
@@ -242,41 +331,13 @@ export default function InvoicesPage() {
                   {formatCurrency(invoice.amount)}
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      {invoice.status !== 'Payée' && (
-                        <DropdownMenuItem onClick={() => handleMarkAsPaid(invoice.id)}>
-                          Marquer comme payée
-                        </DropdownMenuItem>
-                      )}
-                       {invoice.status !== 'Payée' && <DropdownMenuSeparator />}
-                      <DropdownMenuItem onClick={() => openEditDialog(invoice)}>Modifier</DropdownMenuItem>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedInvoice(invoice); }}>Supprimer</DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                Cette action est irréversible. La facture sera définitivement supprimée.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel onClick={() => setSelectedInvoice(null)}>Annuler</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteInvoice()}>Supprimer</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <InvoiceActions 
+                    invoice={invoice} 
+                    openEditDialog={openEditDialog} 
+                    setSelectedInvoice={setSelectedInvoice}
+                    handleMarkAsPaid={handleMarkAsPaid}
+                    handleDeleteInvoice={handleDeleteInvoice}
+                  />
                 </TableCell>
               </TableRow>
             ))}
