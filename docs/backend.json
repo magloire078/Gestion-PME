@@ -26,6 +26,36 @@
         "creationDate"
       ]
     },
+    "Client": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Client",
+      "type": "object",
+      "description": "Represents a client of the company.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the client."
+        },
+        "companyId": {
+          "type": "string",
+          "description": "Reference to Company. (Relationship: Company 1:N Client)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the client."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email of the client.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "companyId",
+        "name"
+      ]
+    },
     "Invoice": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Invoice",
@@ -39,6 +69,14 @@
         "companyId": {
           "type": "string",
           "description": "Reference to Company. (Relationship: Company 1:N Invoice)"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to Client. (Relationship: Client 1:N Invoice)"
+        },
+        "clientName": {
+          "type": "string",
+          "description": "Denormalized name of the client for display purposes."
         },
         "invoiceNumber": {
           "type": "string",
@@ -66,6 +104,8 @@
       "required": [
         "id",
         "companyId",
+        "clientId",
+        "clientName",
         "invoiceNumber",
         "issueDate",
         "dueDate",
@@ -135,6 +175,26 @@
             {
               "name": "companyId",
               "description": "Unique identifier for the company."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/companies/{companyId}/clients/{clientId}",
+        "definition": {
+          "entityName": "Client",
+          "schema": {
+            "$ref": "#/backend/entities/Client"
+          },
+          "description": "Stores client data associated with a specific company.",
+          "params": [
+            {
+              "name": "companyId",
+              "description": "Unique identifier for the company."
+            },
+            {
+              "name": "clientId",
+              "description": "Unique identifier for the client."
             }
           ]
         }

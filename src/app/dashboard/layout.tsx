@@ -13,6 +13,7 @@ import {
   Moon,
   Settings,
   Sun,
+  Users,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -36,6 +37,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
   { href: "/dashboard/invoices", icon: FileText, label: "Factures" },
+  { href: "/dashboard/clients", icon: Users, label: "Clients" },
   { href: "/dashboard/expenses", icon: DollarSign, label: "Dépenses" },
   { href: "/dashboard/reports", icon: LineChart, label: "Rapports" },
   { href: "/dashboard/settings", icon: Settings, label: "Paramètres" },

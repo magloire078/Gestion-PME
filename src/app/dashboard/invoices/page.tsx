@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -47,6 +48,13 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+  } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoreHorizontal, PlusCircle, ArrowUpDown } from "lucide-react";
@@ -55,9 +63,9 @@ import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBl
 import { collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Invoice } from "@/lib/types";
+import type { Invoice, Client } from "@/lib/types";
 
-type SortKey = keyof Omit<Invoice, 'id' | 'companyId'>;
+type SortKey = keyof Omit<Invoice, 'id' | 'companyId' | 'clientId'>;
 
 function getStatusBadgeVariant(status: Invoice["status"]) {
   switch (status) {
@@ -130,7 +138,13 @@ export default function InvoicesPage() {
     return collection(firestore, `companies/${user.uid}/invoices`);
   }, [firestore, user]);
 
-  const { data: invoices, isLoading } = useCollection<Omit<Invoice, 'id'>>(invoicesCollectionRef);
+  const clientsCollectionRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `companies/${user.uid}/clients`);
+  }, [firestore, user]);
+
+  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Omit<Invoice, 'id'>>(invoicesCollectionRef);
+  const { data: clients, isLoading: isLoadingClients } = useCollection<Omit<Client, 'id'>>(clientsCollectionRef);
   
   const sortedInvoices = useMemo(() => {
     let sortableItems = invoices ? [...invoices] : [];
@@ -167,12 +181,21 @@ export default function InvoicesPage() {
 
   const handleAddInvoice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!invoicesCollectionRef) return;
+    if (!invoicesCollectionRef || !clients) return;
 
     const formData = new FormData(event.currentTarget);
+    const clientId = formData.get("clientId") as string;
+    const client = clients.find(c => c.id === clientId);
+
+    if (!client) {
+        toast({ variant: "destructive", title: "Client non trouvé" });
+        return;
+    }
+
     const newInvoice = {
       invoiceNumber: `INV-2024-${String((invoices?.length || 0) + 1).padStart(3, "0")}`,
-      clientName: formData.get("clientName") as string,
+      clientId: client.id,
+      clientName: client.name, // Denormalized name
       amount: parseFloat(formData.get("amount") as string),
       status: "En attente" as const,
       issueDate: new Date().toISOString(),
@@ -187,11 +210,19 @@ export default function InvoicesPage() {
 
   const handleUpdateInvoice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedInvoice || !user) return;
+    if (!selectedInvoice || !user || !clients) return;
 
     const formData = new FormData(event.currentTarget);
+    const clientId = formData.get("clientId") as string;
+    const client = clients.find(c => c.id === clientId);
+    if (!client) {
+        toast({ variant: "destructive", title: "Client non trouvé" });
+        return;
+    }
+    
     const updatedInvoice = {
-      clientName: formData.get("clientName") as string,
+      clientId: client.id,
+      clientName: client.name,
       amount: parseFloat(formData.get("amount") as string),
       dueDate: new Date(formData.get("dueDate") as string).toISOString(),
     };
@@ -223,13 +254,15 @@ export default function InvoicesPage() {
     setIsEditDialogOpen(true);
   }
 
+  const isLoading = isLoadingInvoices || isLoadingClients;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Factures</h1>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled={isLoadingClients || !clients || clients.length === 0}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Créer une facture
             </Button>
@@ -238,16 +271,28 @@ export default function InvoicesPage() {
             <DialogHeader>
               <DialogTitle>Nouvelle facture</DialogTitle>
               <DialogDescription>
-                Remplissez les détails de la nouvelle facture.
+                {(!clients || clients.length === 0) 
+                    ? "Veuillez d'abord ajouter un client dans l'onglet 'Clients'."
+                    : "Remplissez les détails de la nouvelle facture."
+                }
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleAddInvoice}>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="clientName" className="text-right">
+                  <Label htmlFor="clientId" className="text-right">
                     Client
                   </Label>
-                  <Input id="clientName" name="clientName" className="col-span-3" required />
+                  <Select name="clientId" required>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Sélectionnez un client..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients?.map(client => (
+                        <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="amount" className="text-right">
@@ -402,8 +447,17 @@ export default function InvoicesPage() {
             <form onSubmit={handleUpdateInvoice}>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="editClientName" className="text-right">Client</Label>
-                  <Input id="editClientName" name="clientName" defaultValue={selectedInvoice.clientName} className="col-span-3" required />
+                  <Label htmlFor="editClientId" className="text-right">Client</Label>
+                  <Select name="clientId" defaultValue={selectedInvoice.clientId} required>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {clients?.map(client => (
+                            <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="editAmount" className="text-right">Montant</Label>
