@@ -56,7 +56,7 @@ export default function SignUpPage() {
       
       if (userCredential && userCredential.user) {
         const companyRef = doc(firestore, "companies", userCredential.user.uid);
-        await setDocumentNonBlocking(companyRef, {
+        setDocumentNonBlocking(companyRef, {
           name: values.companyName,
           creationDate: new Date().toISOString(),
         }, { merge: true });
