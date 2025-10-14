@@ -1,18 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { handleGenerateReport } from "./actions";
+import { generateFinancialReport } from "@/ai/flows/generate-financial-reports";
 import { Loader2, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/firebase";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection } from "firebase/firestore";
+import type { Invoice, Expense } from "@/lib/types";
 
 export default function ReportsPage() {
   const [report, setReport] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
+  const firestore = useFirestore();
+
+  const invoicesCollectionRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `companies/${user.uid}/invoices`);
+  }, [firestore, user]);
+
+  const expensesCollectionRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `companies/${user.uid}/expenses`);
+  }, [firestore, user]);
+
+  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Omit<Invoice, 'id'>>(invoicesCollectionRef);
+  const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Omit<Expense, 'id'>>(expensesCollectionRef);
 
   const onGenerate = async () => {
     if (!user) {
@@ -24,21 +40,42 @@ export default function ReportsPage() {
         return;
     }
 
+    if (!invoices || !expenses) {
+        toast({
+            title: "Données en cours de chargement",
+            description: "Veuillez patienter pendant que nous chargeons vos données financières.",
+        });
+        return;
+    }
+
     setIsLoading(true);
     setReport(null);
-    const result = await handleGenerateReport(user.uid);
-    setIsLoading(false);
 
-    if (result.success) {
-      setReport(result.data);
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Erreur de génération",
-        description: result.error,
-      });
+    try {
+        if (invoices.length === 0 && expenses.length === 0) {
+            setReport("Aucune donnée de facture ou de dépense n'a été trouvée. Veuillez d'abord ajouter des données pour générer un rapport.");
+            setIsLoading(false);
+            return;
+        }
+
+        const result = await generateFinancialReport({
+            invoices: JSON.stringify(invoices),
+            expenses: JSON.stringify(expenses),
+        });
+        setReport(result.report);
+    } catch (error) {
+        console.error("Error generating report:", error);
+        toast({
+            variant: "destructive",
+            title: "Erreur de génération",
+            description: "Impossible de générer le rapport. Veuillez réessayer.",
+        });
+    } finally {
+        setIsLoading(false);
     }
   };
+
+  const isDataLoading = isLoadingInvoices || isLoadingExpenses;
 
   return (
     <div className="flex flex-col gap-6">
@@ -53,12 +90,17 @@ export default function ReportsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={onGenerate} disabled={isLoading}>
+          <Button onClick={onGenerate} disabled={isLoading || isDataLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Génération en cours...
               </>
+            ) : isDataLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Chargement des données...
+                </>
             ) : (
               <>
                 <Wand2 className="mr-2 h-4 w-4" />
