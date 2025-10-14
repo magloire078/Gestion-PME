@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
-import { formatCurrency } from "@/lib/data";
+import { formatCurrency } from "@/lib/utils";
 import { eachMonthOfInterval, subMonths, format, startOfMonth } from "date-fns";
 import { fr } from 'date-fns/locale';
 import type { Invoice, Expense } from "@/lib/types";

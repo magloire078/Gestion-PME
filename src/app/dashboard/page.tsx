@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/data";
+import { formatCurrency } from "@/lib/utils";
 import { DollarSign, ArrowUpRight, ArrowDownRight, Scale } from "lucide-react";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
