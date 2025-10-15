@@ -32,4 +32,5 @@ export interface Company {
     phone?: string;
     contactEmail?: string;
     taxId?: string;
+    logoUrl?: string;
 }

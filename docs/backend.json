@@ -35,6 +35,11 @@
         "taxId": {
           "type": "string",
           "description": "Tax identification number for the company."
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL of the company's logo stored in Firebase Storage.",
+          "format": "uri"
         }
       },
       "required": [
