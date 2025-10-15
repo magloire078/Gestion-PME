@@ -47,30 +47,31 @@ export default function SignInPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      await initiateEmailSignIn(auth, values.email, values.password);
-      router.push("/dashboard");
-    } catch (error) {
-      let description = "Une erreur inattendue s'est produite. Veuillez réessayer.";
-      
-      if (error instanceof FirebaseError) {
-        if (error.code === 'auth/invalid-credential') {
-          description = "L'adresse e-mail ou le mot de passe est incorrect. Veuillez vérifier vos informations.";
-        } else if (error.code === 'auth/too-many-requests') {
-          description = "Trop de tentatives de connexion. Veuillez réessayer plus tard.";
+    initiateEmailSignIn(auth, values.email, values.password)
+      .then(() => {
+        router.push("/dashboard");
+      })
+      .catch((error) => {
+        let description = "Une erreur inattendue s'est produite. Veuillez réessayer.";
+        
+        if (error instanceof FirebaseError) {
+          if (error.code === 'auth/invalid-credential') {
+            description = "L'adresse e-mail ou le mot de passe est incorrect. Veuillez vérifier vos informations.";
+          } else if (error.code === 'auth/too-many-requests') {
+            description = "Trop de tentatives de connexion. Veuillez réessayer plus tard.";
+          } else {
+              console.error("Firebase Auth Error:", error);
+          }
         } else {
-            console.error("Firebase Auth Error:", error);
+          console.error("Unexpected Error:", error);
         }
-      } else {
-        console.error("Unexpected Error:", error);
-      }
 
-      toast({
-        variant: "destructive",
-        title: "Erreur de connexion",
-        description,
+        toast({
+          variant: "destructive",
+          title: "Erreur de connexion",
+          description,
+        });
       });
-    }
   }
 
   return (

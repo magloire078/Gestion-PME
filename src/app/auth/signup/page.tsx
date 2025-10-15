@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -51,32 +52,32 @@ export default function SignUpPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      const userCredential = await initiateEmailSignUp(auth, values.email, values.password);
-      
-      if (userCredential && userCredential.user) {
-        const companyRef = doc(firestore, "companies", userCredential.user.uid);
-        setDocumentNonBlocking(companyRef, {
-          name: values.companyName,
-          creationDate: new Date().toISOString(),
-        }, { merge: true });
+    initiateEmailSignUp(auth, values.email, values.password)
+      .then((userCredential) => {
+        if (userCredential && userCredential.user) {
+          const companyRef = doc(firestore, "companies", userCredential.user.uid);
+          setDocumentNonBlocking(companyRef, {
+            name: values.companyName,
+            creationDate: new Date().toISOString(),
+          }, { merge: true });
 
-        router.push("/dashboard");
-      }
-    } catch (error) {
-      console.error(error);
-      let description = "Une erreur inattendue s'est produite.";
-      if (error instanceof FirebaseError) {
-        if (error.code === 'auth/email-already-in-use') {
-          description = "Cette adresse e-mail est déjà utilisée.";
+          router.push("/dashboard");
         }
-      }
-      toast({
-        variant: "destructive",
-        title: "Erreur d'inscription",
-        description,
+      })
+      .catch((error) => {
+        console.error(error);
+        let description = "Une erreur inattendue s'est produite.";
+        if (error instanceof FirebaseError) {
+          if (error.code === 'auth/email-already-in-use') {
+            description = "Cette adresse e-mail est déjà utilisée.";
+          }
+        }
+        toast({
+          variant: "destructive",
+          title: "Erreur d'inscription",
+          description,
+        });
       });
-    }
   }
 
   return (
