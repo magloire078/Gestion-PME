@@ -143,6 +143,11 @@
         "description": {
           "type": "string",
           "description": "Description of the expense."
+        },
+        "receiptUrl": {
+            "type": "string",
+            "description": "URL of the uploaded receipt in Firebase Storage.",
+            "format": "uri"
         }
       },
       "required": [

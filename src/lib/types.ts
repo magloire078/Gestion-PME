@@ -21,4 +21,5 @@ export interface Expense {
   category: 'Marketing' | 'Logiciels' | 'Fournitures de bureau' | 'Déplacement' | 'Autre';
   amount: number;
   date: string;
+  receiptUrl?: string;
 }
