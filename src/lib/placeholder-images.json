@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "hero-dashboard",
-      "description": "Analyse de résultat financier.",
-      "imageUrl": "https://copilot.microsoft.com/th/id/BCO.292610da-7089-46f9-90b9-eb9e807f5fc9.png",
-      "imageHint": "financial dashboard"
+      "description": "Un bureau de travail moderne symbolisant la gestion d'entreprise.",
+      "imageUrl": "https://picsum.photos/seed/business/1200/900",
+      "imageHint": "modern workspace"
     }
   ]
 }
