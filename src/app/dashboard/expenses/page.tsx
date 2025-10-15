@@ -56,7 +56,7 @@ import {
   } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, PlusCircle, ArrowUpDown, ExternalLink, Loader2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, ArrowUpDown, ExternalLink, Loader2, Coins } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useUser, useFirestore, useStorage, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
@@ -254,6 +254,20 @@ export default function ExpensesPage() {
         setIsEditDialogOpen(true);
     }
 
+    const renderEmptyState = () => (
+        <div className="text-center py-12">
+            <Coins className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-semibold">Aucune dépense enregistrée</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Commencez par ajouter votre première dépense.</p>
+            <div className="mt-6">
+                <Button onClick={() => setIsAddDialogOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Ajouter une dépense
+                </Button>
+            </div>
+        </div>
+    );
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -321,7 +335,7 @@ export default function ExpensesPage() {
                 <CardContent><div className="space-y-2"><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-3/5" /></div></CardContent>
             </Card>
         ))}
-        {!isLoading && sortedExpenses?.map((expense) => (
+        {!isLoading && sortedExpenses.length > 0 ? sortedExpenses?.map((expense) => (
             <Card key={expense.id}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div>
@@ -347,90 +361,98 @@ export default function ExpensesPage() {
                     />
                 </CardFooter>
             </Card>
-        ))}
+        )) : null }
       </div>
+      {!isLoading && sortedExpenses.length === 0 && (
+         <div className="md:hidden">{renderEmptyState()}</div>
+      )}
+
 
       {/* Desktop View */}
       <div className="hidden md:block border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>
-                <Button variant="ghost" onClick={() => requestSort('description')} className="px-0">
-                  Description {getSortIcon('description')}
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" onClick={() => requestSort('category')} className="px-0">
-                    Catégorie {getSortIcon('category')}
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" onClick={() => requestSort('date')} className="px-0">
-                    Date {getSortIcon('date')}
-                </Button>
-              </TableHead>
-              <TableHead className="text-right">
-                <Button variant="ghost" onClick={() => requestSort('amount')} className="px-0">
-                    Montant {getSortIcon('amount')}
-                </Button>
-              </TableHead>
-              <TableHead>Justificatif</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading &&
-              [...Array(5)].map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-3/5" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-2/5" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="h-4 w-20 ml-auto" />
-                  </TableCell>
-                   <TableCell>
-                    <Skeleton className="h-8 w-8" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="h-8 w-8 ml-auto" />
-                  </TableCell>
-                </TableRow>
-              ))}
-            {!isLoading && sortedExpenses?.map((expense) => (
-              <TableRow key={expense.id}>
-                <TableCell className="font-medium">{expense.description}</TableCell>
-                <TableCell>{expense.category}</TableCell>
-                <TableCell>{new Date(expense.date).toLocaleDateString('fr-FR')}</TableCell>
-                <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
-                <TableCell>
-                  {expense.receiptUrl && (
-                    <Button asChild variant="ghost" size="icon">
-                      <Link href={expense.receiptUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4" />
-                        <span className="sr-only">Voir justificatif</span>
-                      </Link>
+        {isLoading || sortedExpenses.length > 0 ? (
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('description')} className="px-0">
+                    Description {getSortIcon('description')}
                     </Button>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                   <ExpenseActions 
-                        expense={expense}
-                        openEditDialog={openEditDialog}
-                        setSelectedExpense={setSelectedExpense}
-                        handleDeleteExpense={handleDeleteExpense}
-                    />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('category')} className="px-0">
+                        Catégorie {getSortIcon('category')}
+                    </Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('date')} className="px-0">
+                        Date {getSortIcon('date')}
+                    </Button>
+                </TableHead>
+                <TableHead className="text-right">
+                    <Button variant="ghost" onClick={() => requestSort('amount')} className="px-0">
+                        Montant {getSortIcon('amount')}
+                    </Button>
+                </TableHead>
+                <TableHead>Justificatif</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {isLoading &&
+                [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                    <TableCell>
+                        <Skeleton className="h-4 w-3/5" />
+                    </TableCell>
+                    <TableCell>
+                        <Skeleton className="h-4 w-2/5" />
+                    </TableCell>
+                    <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Skeleton className="h-4 w-20 ml-auto" />
+                    </TableCell>
+                    <TableCell>
+                        <Skeleton className="h-8 w-8" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Skeleton className="h-8 w-8 ml-auto" />
+                    </TableCell>
+                    </TableRow>
+                ))}
+                {!isLoading && sortedExpenses?.map((expense) => (
+                <TableRow key={expense.id}>
+                    <TableCell className="font-medium">{expense.description}</TableCell>
+                    <TableCell>{expense.category}</TableCell>
+                    <TableCell>{new Date(expense.date).toLocaleDateString('fr-FR')}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
+                    <TableCell>
+                    {expense.receiptUrl && (
+                        <Button asChild variant="ghost" size="icon">
+                        <Link href={expense.receiptUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4" />
+                            <span className="sr-only">Voir justificatif</span>
+                        </Link>
+                        </Button>
+                    )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                    <ExpenseActions 
+                            expense={expense}
+                            openEditDialog={openEditDialog}
+                            setSelectedExpense={setSelectedExpense}
+                            handleDeleteExpense={handleDeleteExpense}
+                        />
+                    </TableCell>
+                </TableRow>
+                ))}
+            </TableBody>
+            </Table>
+        ) : (
+            renderEmptyState()
+        )}
       </div>
 
       {selectedExpense && (

@@ -48,7 +48,7 @@ import {
   } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, PlusCircle, ArrowUpDown } from "lucide-react";
+import { MoreHorizontal, PlusCircle, ArrowUpDown, Users } from "lucide-react";
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
@@ -191,6 +191,20 @@ export default function ClientsPage() {
         setIsEditDialogOpen(true);
     }
 
+    const renderEmptyState = () => (
+        <div className="text-center py-12">
+            <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-semibold">Aucun client trouvé</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Commencez par ajouter votre premier client.</p>
+            <div className="mt-6">
+                <Button onClick={() => setIsAddDialogOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Ajouter un client
+                </Button>
+            </div>
+        </div>
+    );
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -236,7 +250,7 @@ export default function ClientsPage() {
                 <CardContent><div className="space-y-2"><Skeleton className="h-4 w-4/5" /></div></CardContent>
             </Card>
         ))}
-        {!isLoading && sortedClients?.map((client) => (
+        {!isLoading && sortedClients.length > 0 ? sortedClients?.map((client) => (
             <Card key={client.id}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div>
@@ -253,58 +267,66 @@ export default function ClientsPage() {
                     />
                 </CardFooter>
             </Card>
-        ))}
+        )) : null }
       </div>
+      {!isLoading && sortedClients.length === 0 && (
+         <div className="md:hidden">{renderEmptyState()}</div>
+      )}
+
 
       {/* Desktop View */}
       <div className="hidden md:block border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>
-                <Button variant="ghost" onClick={() => requestSort('name')} className="px-0">
-                  Nom {getSortIcon('name')}
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" onClick={() => requestSort('email')} className="px-0">
-                    Email {getSortIcon('email')}
-                </Button>
-              </TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading &&
-              [...Array(5)].map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-2/5" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-3/5" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="h-8 w-8 ml-auto" />
-                  </TableCell>
+        {isLoading || sortedClients.length > 0 ? (
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('name')} className="px-0">
+                    Nom {getSortIcon('name')}
+                    </Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('email')} className="px-0">
+                        Email {getSortIcon('email')}
+                    </Button>
+                </TableHead>
+                <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            {!isLoading && sortedClients?.map((client) => (
-              <TableRow key={client.id}>
-                <TableCell className="font-medium">{client.name}</TableCell>
-                <TableCell>{client.email}</TableCell>
-                <TableCell className="text-right">
-                   <ClientActions 
-                        client={client}
-                        openEditDialog={openEditDialog}
-                        setSelectedClient={setSelectedClient}
-                        handleDeleteClient={handleDeleteClient}
-                    />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+                {isLoading &&
+                [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                    <TableCell>
+                        <Skeleton className="h-4 w-2/5" />
+                    </TableCell>
+                    <TableCell>
+                        <Skeleton className="h-4 w-3/5" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Skeleton className="h-8 w-8 ml-auto" />
+                    </TableCell>
+                    </TableRow>
+                ))}
+                {!isLoading && sortedClients?.map((client) => (
+                <TableRow key={client.id}>
+                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell>{client.email}</TableCell>
+                    <TableCell className="text-right">
+                    <ClientActions 
+                            client={client}
+                            openEditDialog={openEditDialog}
+                            setSelectedClient={setSelectedClient}
+                            handleDeleteClient={handleDeleteClient}
+                        />
+                    </TableCell>
+                </TableRow>
+                ))}
+            </TableBody>
+            </Table>
+        ) : (
+            renderEmptyState()
+        )}
       </div>
 
       {selectedClient && (
@@ -339,3 +361,4 @@ export default function ClientsPage() {
       )}
     </div>
   );
+}

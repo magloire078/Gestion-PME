@@ -58,7 +58,7 @@ import {
   } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, PlusCircle, ArrowUpDown, Eye } from "lucide-react";
+import { MoreHorizontal, PlusCircle, ArrowUpDown, Eye, FileText } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
@@ -272,6 +272,25 @@ export default function InvoicesPage() {
 
   const isLoading = isLoadingInvoices || isLoadingClients;
 
+  const renderEmptyState = () => (
+    <div className="text-center py-12">
+        <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+        <h3 className="mt-4 text-lg font-semibold">Aucune facture pour le moment</h3>
+        <p className="mt-2 text-sm text-muted-foreground">Commencez par créer votre première facture.</p>
+        <div className="mt-6">
+            <Button onClick={() => setIsAddDialogOpen(true)} disabled={isLoadingClients || !clients || clients.length === 0}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Créer une facture
+            </Button>
+            {(!clients || clients.length === 0) && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                    Vous devez d'abord <Link href="/dashboard/clients" className="underline font-medium">ajouter un client</Link>.
+                </p>
+            )}
+        </div>
+    </div>
+);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -343,7 +362,7 @@ export default function InvoicesPage() {
         {isLoading && [...Array(3)].map((_, i) => (
             <Card key={i}><CardHeader><Skeleton className="h-6 w-3/5" /></CardHeader><CardContent><div className="space-y-2"><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-3/5" /></div></CardContent></Card>
         ))}
-        {!isLoading && sortedInvoices?.map((invoice) => (
+        {!isLoading && sortedInvoices.length > 0 ? sortedInvoices.map((invoice) => (
             <Card key={invoice.id}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div>
@@ -372,88 +391,95 @@ export default function InvoicesPage() {
                     />
                 </CardFooter>
             </Card>
-        ))}
+        )) : null }
       </div>
+      {!isLoading && sortedInvoices.length === 0 && (
+          <div className="md:hidden">{renderEmptyState()}</div>
+      )}
 
 
       {/* Desktop View */}
       <div className="hidden md:block border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-                <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('invoiceNumber')} className="px-0">
-                        Numéro {getSortIcon('invoiceNumber')}
-                    </Button>
-                </TableHead>
-                <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('clientName')} className="px-0">
-                        Client {getSortIcon('clientName')}
-                    </Button>
-                </TableHead>
-                <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('status')} className="px-0">
-                        Statut {getSortIcon('status')}
-                    </Button>
-                </TableHead>
-                <TableHead className="text-right">
-                    <Button variant="ghost" onClick={() => requestSort('amount')} className="px-0">
-                        Montant {getSortIcon('amount')}
-                    </Button>
-                </TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading &&
-              [...Array(5)].map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-20" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-32" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="h-4 w-24 ml-auto" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="h-8 w-8 ml-auto" />
-                  </TableCell>
+        {isLoading || sortedInvoices.length > 0 ? (
+            <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>
+                        <Button variant="ghost" onClick={() => requestSort('invoiceNumber')} className="px-0">
+                            Numéro {getSortIcon('invoiceNumber')}
+                        </Button>
+                    </TableHead>
+                    <TableHead>
+                        <Button variant="ghost" onClick={() => requestSort('clientName')} className="px-0">
+                            Client {getSortIcon('clientName')}
+                        </Button>
+                    </TableHead>
+                    <TableHead>
+                        <Button variant="ghost" onClick={() => requestSort('status')} className="px-0">
+                            Statut {getSortIcon('status')}
+                        </Button>
+                    </TableHead>
+                    <TableHead className="text-right">
+                        <Button variant="ghost" onClick={() => requestSort('amount')} className="px-0">
+                            Montant {getSortIcon('amount')}
+                        </Button>
+                    </TableHead>
+                <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            {!isLoading && sortedInvoices?.map((invoice) => (
-              <TableRow key={invoice.id}>
-                <TableCell className="font-medium">
-                    <Link href={`/dashboard/invoices/${invoice.id}`} className="hover:underline">
-                        {invoice.invoiceNumber}
-                    </Link>
-                </TableCell>
-                <TableCell>{invoice.clientName}</TableCell>
-                <TableCell>
-                  <Badge variant={getStatusBadgeVariant(invoice.status)} className={invoice.status === 'Payée' ? 'bg-primary text-primary-foreground' : ''}>
-                    {invoice.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(invoice.amount)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <InvoiceActions 
-                    invoice={invoice} 
-                    openEditDialog={openEditDialog} 
-                    setSelectedInvoice={setSelectedInvoice}
-                    handleMarkAsPaid={handleMarkAsPaid}
-                    handleDeleteInvoice={handleDeleteInvoice}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+                {isLoading &&
+                [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                    <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                        <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Skeleton className="h-4 w-24 ml-auto" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Skeleton className="h-8 w-8 ml-auto" />
+                    </TableCell>
+                    </TableRow>
+                ))}
+                {!isLoading && sortedInvoices?.map((invoice) => (
+                <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">
+                        <Link href={`/dashboard/invoices/${invoice.id}`} className="hover:underline">
+                            {invoice.invoiceNumber}
+                        </Link>
+                    </TableCell>
+                    <TableCell>{invoice.clientName}</TableCell>
+                    <TableCell>
+                    <Badge variant={getStatusBadgeVariant(invoice.status)} className={invoice.status === 'Payée' ? 'bg-primary text-primary-foreground' : ''}>
+                        {invoice.status}
+                    </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                    {formatCurrency(invoice.amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                    <InvoiceActions 
+                        invoice={invoice} 
+                        openEditDialog={openEditDialog} 
+                        setSelectedInvoice={setSelectedInvoice}
+                        handleMarkAsPaid={handleMarkAsPaid}
+                        handleDeleteInvoice={handleDeleteInvoice}
+                    />
+                    </TableCell>
+                </TableRow>
+                ))}
+            </TableBody>
+            </Table>
+        ) : (
+            renderEmptyState()
+        )}
       </div>
       
       {selectedInvoice && (
