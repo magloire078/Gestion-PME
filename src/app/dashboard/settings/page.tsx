@@ -108,7 +108,8 @@ export default function SettingsPage() {
             title: "Avatar mis à jour",
             description: "Votre nouvelle image de profil a été enregistrée.",
         });
-        window.location.reload();
+        // Recharger pour voir le nouvel avatar partout
+        window.location.reload(); 
     } catch (error) {
         console.error("Error uploading avatar:", error);
         toast({
