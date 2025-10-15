@@ -30,15 +30,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, User as UserIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { Company } from "@/lib/types";
 
 
 const formSchema = z.object({
-  companyName: z.string().min(2, "Le nom de l'entreprise doit comporter au moins 2 caractères."),
+  name: z.string().min(2, "Le nom de l'entreprise doit comporter au moins 2 caractères."),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  contactEmail: z.string().email("Adresse e-mail invalide.").optional().or(z.literal('')),
+  taxId: z.string().optional(),
 });
-
-interface Company {
-    name: string;
-}
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -59,22 +60,32 @@ export default function SettingsPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      companyName: "",
+      name: "",
+      address: "",
+      phone: "",
+      contactEmail: "",
+      taxId: "",
     },
   });
 
   useEffect(() => {
     if (company) {
-      form.reset({ companyName: company.name });
+      form.reset({ 
+        name: company.name,
+        address: company.address || "",
+        phone: company.phone || "",
+        contactEmail: company.contactEmail || "",
+        taxId: company.taxId || "",
+       });
     }
   }, [company, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (!companyRef) return;
-    updateDocumentNonBlocking(companyRef, { name: values.companyName });
+    updateDocumentNonBlocking(companyRef, values);
     toast({
       title: "Paramètres enregistrés",
-      description: "Le nom de votre entreprise a été mis à jour.",
+      description: "Les informations de votre entreprise ont été mises à jour.",
     });
   }
 
@@ -97,9 +108,6 @@ export default function SettingsPage() {
             title: "Avatar mis à jour",
             description: "Votre nouvelle image de profil a été enregistrée.",
         });
-        // This is a bit of a hack to force a re-render of the user object
-        // in the useUser hook, which will then update the avatar in the layout.
-        // A more robust solution might involve a global state management library.
         window.location.reload();
     } catch (error) {
         console.error("Error uploading avatar:", error);
@@ -118,7 +126,7 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-semibold">Paramètres</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Profil</CardTitle>
+          <CardTitle>Profil de l'entreprise</CardTitle>
           <CardDescription>
             Mettez à jour les informations de votre profil et de votre entreprise ici.
           </CardDescription>
@@ -149,7 +157,10 @@ export default function SettingsPage() {
 
           {isLoading ? (
              <div className="space-y-4">
-                <Skeleton className="h-5 w-1/4" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
              </div>
           ) : (
@@ -157,12 +168,64 @@ export default function SettingsPage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <FormField
                   control={form.control}
-                  name="companyName"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nom de l'entreprise</FormLabel>
                       <FormControl>
                         <Input placeholder="Votre Entreprise SAS" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Adresse</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123 Rue de la République, 75001 Paris" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Numéro de téléphone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="+33 1 23 45 67 89" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="contactEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email de contact</FormLabel>
+                      <FormControl>
+                        <Input placeholder="contact@votre-entreprise.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="taxId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Numéro d'identification fiscale</FormLabel>
+                      <FormControl>
+                        <Input placeholder="FR123456789" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -33,6 +33,7 @@ import { useState, useEffect } from "react";
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Company } from "@/lib/types";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Tableau de bord" },
@@ -42,10 +43,6 @@ const navItems = [
   { href: "/dashboard/reports", icon: LineChart, label: "Rapports" },
   { href: "/dashboard/settings", icon: Settings, label: "Paramètres" },
 ];
-
-interface Company {
-    name: string;
-}
 
 function UserNav() {
   const auth = useAuth();

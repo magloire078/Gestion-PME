@@ -23,3 +23,13 @@ export interface Expense {
   date: string;
   receiptUrl?: string;
 }
+
+export interface Company {
+    id: string;
+    name: string;
+    creationDate: string;
+    address?: string;
+    phone?: string;
+    contactEmail?: string;
+    taxId?: string;
+}
