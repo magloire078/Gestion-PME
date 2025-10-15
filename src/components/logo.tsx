@@ -1,12 +1,19 @@
-import { cn } from '@/lib/utils';
 
-export function Logo({ className }: { className?: string }) {
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
+
+export function Logo({ className, logoUrl }: { className?: string; logoUrl?: string | null }) {
+  if (logoUrl) {
+    return (
+        <div className={cn('flex items-center gap-2', className)}>
+            <Image src={logoUrl} alt="Logo de l'entreprise" width={24} height={24} className="h-6 w-auto" />
+            <span className="text-xl font-bold text-foreground whitespace-nowrap">Gestion PME</span>
+        </div>
+    );
+  }
+
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      {/*
-        REMPLACEZ LE CODE SVG CI-DESSOUS PAR LE VÔTRE.
-        Ouvrez votre fichier .svg avec un éditeur de texte, copiez le code, et collez-le ici.
-      */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -24,8 +31,9 @@ export function Logo({ className }: { className?: string }) {
         <path d="M5.5 14.5V18.5"></path>
         <rect width="23" height="23" x="0.5" y="0.5" rx="4"></rect>
       </svg>
-      {/* Fin du code SVG à remplacer */}
       <span className="text-xl font-bold text-foreground whitespace-nowrap">Gestion PME</span>
     </div>
   );
 }
+
+    

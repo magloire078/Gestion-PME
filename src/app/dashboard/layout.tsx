@@ -97,7 +97,7 @@ function UserNav() {
   );
 }
 
-function MobileNav() {
+function MobileNav({ logoUrl }: { logoUrl?: string | null }) {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
   
@@ -116,7 +116,7 @@ function MobileNav() {
               className="flex items-center gap-2 text-lg font-semibold mb-4"
               onClick={() => setIsOpen(false)}
             >
-              <Logo />
+              <Logo logoUrl={logoUrl} />
             </Link>
             {navItems.map((item) => (
               <Link
@@ -172,7 +172,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-auto flex-col items-center border-b px-4 py-4 lg:h-auto lg:px-6">
             <Link href="/dashboard" className="flex flex-col items-center gap-2 font-semibold">
-              <Logo />
+              <Logo logoUrl={company?.logoUrl} />
               {isCompanyLoading ? (
                 <Skeleton className="h-4 w-32 mt-1" />
               ) : (
@@ -202,7 +202,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
       <div className="flex flex-col">
         <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-          <MobileNav />
+          <MobileNav logoUrl={company?.logoUrl} />
           <div className="w-full flex-1" />
           <UserNav />
         </header>
@@ -213,3 +213,5 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
+
+    
