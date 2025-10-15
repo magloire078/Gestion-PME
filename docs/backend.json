@@ -18,6 +18,23 @@
           "type": "string",
           "description": "Date the company was created within the system.",
           "format": "date-time"
+        },
+        "address": {
+          "type": "string",
+          "description": "Physical address of the company."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number for the company."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "Public contact email for the company.",
+          "format": "email"
+        },
+        "taxId": {
+          "type": "string",
+          "description": "Tax identification number for the company."
         }
       },
       "required": [
