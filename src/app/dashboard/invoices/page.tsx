@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -57,7 +58,7 @@ import {
   } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, PlusCircle, ArrowUpDown } from "lucide-react";
+import { MoreHorizontal, PlusCircle, ArrowUpDown, Eye } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
@@ -95,6 +96,12 @@ function InvoiceActions({ invoice, openEditDialog, setSelectedInvoice, handleMar
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <Link href={`/dashboard/invoices/${invoice.id}`}>
+                    <DropdownMenuItem>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Voir
+                    </DropdownMenuItem>
+                </Link>
                 {invoice.status !== 'Payée' && (
                     <DropdownMenuItem onClick={() => handleMarkAsPaid(invoice.id)}>
                         Marquer comme payée
@@ -340,7 +347,11 @@ export default function InvoicesPage() {
             <Card key={invoice.id}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div>
-                        <CardTitle className="text-base font-bold">{invoice.invoiceNumber}</CardTitle>
+                        <CardTitle className="text-base font-bold">
+                           <Link href={`/dashboard/invoices/${invoice.id}`} className="hover:underline">
+                                {invoice.invoiceNumber}
+                            </Link>
+                        </CardTitle>
                         <CardDescription>{invoice.clientName}</CardDescription>
                     </div>
                     <div className="text-right font-bold text-lg">{formatCurrency(invoice.amount)}</div>
@@ -416,7 +427,11 @@ export default function InvoicesPage() {
               ))}
             {!isLoading && sortedInvoices?.map((invoice) => (
               <TableRow key={invoice.id}>
-                <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                <TableCell className="font-medium">
+                    <Link href={`/dashboard/invoices/${invoice.id}`} className="hover:underline">
+                        {invoice.invoiceNumber}
+                    </Link>
+                </TableCell>
                 <TableCell>{invoice.clientName}</TableCell>
                 <TableCell>
                   <Badge variant={getStatusBadgeVariant(invoice.status)} className={invoice.status === 'Payée' ? 'bg-primary text-primary-foreground' : ''}>
