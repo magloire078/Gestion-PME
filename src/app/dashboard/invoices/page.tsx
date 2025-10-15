@@ -146,8 +146,17 @@ export default function InvoicesPage() {
   const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Omit<Invoice, 'id'>>(invoicesCollectionRef);
   const { data: clients, isLoading: isLoadingClients } = useCollection<Omit<Client, 'id'>>(clientsCollectionRef);
   
+  const processedInvoices = useMemo(() => {
+    return invoices?.map(invoice => {
+        if (invoice.status === 'En attente' && new Date(invoice.dueDate) < new Date()) {
+            return { ...invoice, status: 'En retard' as const };
+        }
+        return invoice;
+    }) ?? [];
+  }, [invoices]);
+
   const sortedInvoices = useMemo(() => {
-    let sortableItems = invoices ? [...invoices] : [];
+    let sortableItems = processedInvoices ? [...processedInvoices] : [];
     if (sortConfig.key) {
       sortableItems.sort((a, b) => {
         const aValue = a[sortConfig.key];
@@ -162,7 +171,7 @@ export default function InvoicesPage() {
       });
     }
     return sortableItems;
-  }, [invoices, sortConfig]);
+  }, [processedInvoices, sortConfig]);
 
   const requestSort = (key: SortKey) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -478,3 +487,5 @@ export default function InvoicesPage() {
     </div>
   );
 }
+
+    
