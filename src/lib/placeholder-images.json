@@ -3,8 +3,26 @@
     {
       "id": "hero-dashboard",
       "description": "Un bureau de travail moderne symbolisant la gestion d'entreprise.",
-      "imageUrl": "https://picsum.photos/seed/business/1200/900",
+      "imageUrl": "https://images.unsplash.com/photo-1748665194498-21a7e3d8ff19?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bW9kZXJuJTIwd29ya3NwYWNlfGVufDB8fHx8MTc2MTUzMzc5M3ww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "modern workspace"
+    },
+    {
+      "id": "carousel-invoices",
+      "description": "Interface de gestion des factures.",
+      "imageUrl": "https://images.unsplash.com/photo-1641089017752-326a2e2f94f0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxpbnZvaWNlJTIwbWFuYWdlbWVudHxlbnwwfHx8fDE3NjE1NjMwODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "invoice management"
+    },
+    {
+      "id": "carousel-expenses",
+      "description": "Interface de suivi des dépenses.",
+      "imageUrl": "https://images.unsplash.com/photo-1572700433454-3d77d2fb5c0e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxleHBlbnNlJTIwdHJhY2tpbmd8ZW58MHx8fHwxNzYxNTYzMDgxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "expense tracking"
+    },
+    {
+      "id": "carousel-reports",
+      "description": "Rapport financier généré par l'IA.",
+      "imageUrl": "https://images.unsplash.com/photo-1579532582937-16c108930bf6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxmaW5hbmNpYWwlMjByZXBvcnR8ZW58MHx8fHwxNzYxNTEzNzc5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "financial report"
     }
   ]
 }

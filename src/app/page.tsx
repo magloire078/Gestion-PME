@@ -4,9 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { FileText, Coins, BarChart } from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 export default function Home() {
-  const heroImage = PlaceHolderImages.find((p) => p.id === 'hero-dashboard');
+  const carouselImages = PlaceHolderImages.filter((p) => p.id.startsWith('carousel-'));
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -42,17 +50,36 @@ export default function Home() {
                   </Button>
                 </div>
               </div>
-              {heroImage && (
-                <Image
-                  src={heroImage.imageUrl}
-                  alt={heroImage.description}
-                  width={1200}
-                  height={900}
-                  data-ai-hint={heroImage.imageHint}
-                  className="mx-auto aspect-video overflow-hidden rounded-xl object-cover object-center sm:w-full lg:order-last shadow-lg"
-                  priority
-                />
-              )}
+              <div className="mx-auto w-full max-w-full lg:order-last">
+                <Carousel
+                  className="w-full"
+                  plugins={[
+                    Autoplay({
+                      delay: 3000,
+                      stopOnInteraction: false,
+                      stopOnMouseEnter: true,
+                    }),
+                  ]}
+                >
+                  <CarouselContent>
+                    {carouselImages.map((image) => (
+                      <CarouselItem key={image.id}>
+                        <Image
+                          src={image.imageUrl}
+                          alt={image.description}
+                          width={1200}
+                          height={900}
+                          data-ai-hint={image.imageHint}
+                          className="aspect-video w-full overflow-hidden rounded-xl object-cover object-center shadow-lg"
+                          priority={carouselImages.indexOf(image) === 0}
+                        />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 hidden lg:flex" />
+                  <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 hidden lg:flex" />
+                </Carousel>
+              </div>
             </div>
           </div>
         </section>
