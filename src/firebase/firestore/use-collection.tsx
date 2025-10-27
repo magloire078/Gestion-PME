@@ -69,6 +69,16 @@ export function useCollection<T = any>(
       return;
     }
 
+    if (memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
+      const errorMessage = 'useCollection received a query or reference that was not created with useMemoFirebase. This can cause infinite loops and performance issues.';
+      console.error(errorMessage, memoizedTargetRefOrQuery);
+      const devError = new Error(errorMessage);
+      setError(devError);
+      // In a real app, you might want to throw this error in development
+      // or handle it more gracefully.
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 

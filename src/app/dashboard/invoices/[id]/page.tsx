@@ -40,12 +40,12 @@ export default function InvoiceDetailsPage() {
   const firestore = useFirestore();
 
   const invoiceRef = useMemoFirebase(() => {
-    if (!user || !invoiceId) return null;
+    if (!user || !invoiceId || !firestore) return null;
     return doc(firestore, `companies/${user.uid}/invoices`, invoiceId as string);
   }, [firestore, user, invoiceId]);
 
   const companyRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return doc(firestore, "companies", user.uid);
   }, [firestore, user]);
 

@@ -146,7 +146,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const firestore = useFirestore();
 
     const companyRef = useMemoFirebase(() => {
-        if (!user) return null;
+        if (!user || !firestore) return null;
         return doc(firestore, "companies", user.uid);
       }, [firestore, user]);
     
@@ -213,5 +213,3 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
-
-    

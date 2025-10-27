@@ -54,7 +54,7 @@ export default function SettingsPage() {
   const logoFileInputRef = useRef<HTMLInputElement>(null);
 
   const companyRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return doc(firestore, "companies", user.uid);
   }, [firestore, user]);
 
@@ -94,7 +94,7 @@ export default function SettingsPage() {
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user || !auth.currentUser) return;
 
     setIsAvatarUploading(true);
     const storageRef = ref(storage, `avatars/${user.uid}/${file.name}`);
@@ -103,9 +103,7 @@ export default function SettingsPage() {
         await uploadBytes(storageRef, file);
         const photoURL = await getDownloadURL(storageRef);
         
-        if (auth.currentUser) {
-            await updateProfile(auth.currentUser, { photoURL });
-        }
+        await updateProfile(auth.currentUser, { photoURL });
 
         toast({
             title: "Avatar mis à jour",
@@ -127,7 +125,7 @@ export default function SettingsPage() {
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user || !companyRef) return;
+    if (!file || !user || !companyRef || !storage) return;
 
     setIsLogoUploading(true);
     const storageRef = ref(storage, `logos/${user.uid}/${file.name}`);

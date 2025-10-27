@@ -141,12 +141,12 @@ export default function InvoicesPage() {
   const { toast } = useToast();
 
   const invoicesCollectionRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return collection(firestore, `companies/${user.uid}/invoices`);
   }, [firestore, user]);
 
   const clientsCollectionRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return collection(firestore, `companies/${user.uid}/clients`);
   }, [firestore, user]);
 
@@ -197,7 +197,7 @@ export default function InvoicesPage() {
 
   const handleAddInvoice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!invoicesCollectionRef || !clients) return;
+    if (!invoicesCollectionRef || !clients || !user) return;
 
     const formData = new FormData(event.currentTarget);
     const clientId = formData.get("clientId") as string;
@@ -216,7 +216,7 @@ export default function InvoicesPage() {
       status: "En attente" as const,
       issueDate: new Date().toISOString(),
       dueDate: new Date(formData.get("dueDate") as string).toISOString(),
-      companyId: user!.uid,
+      companyId: user.uid,
     };
     addDocumentNonBlocking(invoicesCollectionRef, newInvoice);
     toast({ title: "Facture créée", description: `La facture pour ${newInvoice.clientName} a été ajoutée.` });
@@ -226,7 +226,7 @@ export default function InvoicesPage() {
 
   const handleUpdateInvoice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedInvoice || !user || !clients) return;
+    if (!selectedInvoice || !user || !clients || !firestore) return;
 
     const formData = new FormData(event.currentTarget);
     const clientId = formData.get("clientId") as string;
@@ -251,7 +251,7 @@ export default function InvoicesPage() {
   };
 
   const handleDeleteInvoice = () => {
-    if (!selectedInvoice || !user) return;
+    if (!selectedInvoice || !user || !firestore) return;
     const invoiceRef = doc(firestore, `companies/${user.uid}/invoices`, selectedInvoice.id);
     deleteDocumentNonBlocking(invoiceRef);
     toast({ title: "Facture supprimée", description: "La facture a été supprimée avec succès." });
@@ -259,7 +259,7 @@ export default function InvoicesPage() {
   }
 
   const handleMarkAsPaid = (invoiceId: string) => {
-    if (!user) return;
+    if (!user || !firestore) return;
     const invoiceRef = doc(firestore, `companies/${user.uid}/invoices`, invoiceId);
     updateDocumentNonBlocking(invoiceRef, { status: "Payée" });
     toast({ title: "Statut mis à jour", description: "La facture a été marquée comme payée." });

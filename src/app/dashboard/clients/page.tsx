@@ -106,7 +106,7 @@ export default function ClientsPage() {
     const { toast } = useToast();
 
     const clientsCollectionRef = useMemoFirebase(() => {
-        if (!user) return null;
+        if (!user || !firestore) return null;
         return collection(firestore, `companies/${user.uid}/clients`);
     }, [firestore, user]);
 
@@ -147,13 +147,13 @@ export default function ClientsPage() {
 
     const handleAddClient = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!clientsCollectionRef) return;
+        if (!clientsCollectionRef || !user) return;
 
         const formData = new FormData(event.currentTarget);
         const newClient = {
             name: formData.get("name") as string,
             email: formData.get("email") as string,
-            companyId: user!.uid,
+            companyId: user.uid,
         };
         addDocumentNonBlocking(clientsCollectionRef, newClient);
         toast({ title: "Client ajouté", description: "Le nouveau client a été enregistré." });
@@ -163,7 +163,7 @@ export default function ClientsPage() {
 
     const handleUpdateClient = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!selectedClient || !user) return;
+        if (!selectedClient || !user || !firestore) return;
     
         const formData = new FormData(event.currentTarget);
         const updatedClient = {
@@ -179,7 +179,7 @@ export default function ClientsPage() {
     };
     
     const handleDeleteClient = () => {
-        if (!selectedClient || !user) return;
+        if (!selectedClient || !user || !firestore) return;
         const clientRef = doc(firestore, `companies/${user.uid}/clients`, selectedClient.id);
         deleteDocumentNonBlocking(clientRef);
         toast({ title: "Client supprimé", description: "Le client a été supprimé avec succès." });

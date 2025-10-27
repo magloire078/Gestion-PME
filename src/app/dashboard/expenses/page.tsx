@@ -127,7 +127,7 @@ export default function ExpensesPage() {
     const { toast } = useToast();
 
     const expensesCollectionRef = useMemoFirebase(() => {
-        if (!user) return null;
+        if (!user || !firestore) return null;
         return collection(firestore, `companies/${user.uid}/expenses`);
     }, [firestore, user]);
 
@@ -167,7 +167,7 @@ export default function ExpensesPage() {
     };
     
     const uploadReceipt = async (file: File): Promise<string | null> => {
-        if (!user) return null;
+        if (!user || !storage) return null;
         setIsUploading(true);
         const storageRef = ref(storage, `receipts/${user.uid}/${Date.now()}_${file.name}`);
         try {
@@ -214,7 +214,7 @@ export default function ExpensesPage() {
 
     const handleUpdateExpense = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!selectedExpense || !user) return;
+        if (!selectedExpense || !user || !firestore) return;
     
         const formData = new FormData(event.currentTarget);
         const receiptFile = formData.get("receipt") as File | null;
@@ -242,7 +242,7 @@ export default function ExpensesPage() {
     };
     
     const handleDeleteExpense = () => {
-        if (!selectedExpense || !user) return;
+        if (!selectedExpense || !user || !firestore) return;
         const expenseRef = doc(firestore, `companies/${user.uid}/expenses`, selectedExpense.id);
         deleteDocumentNonBlocking(expenseRef);
         toast({ title: "Dépense supprimée", description: "La dépense a été supprimée avec succès." });

@@ -18,12 +18,12 @@ export default function ReportsPage() {
   const firestore = useFirestore();
 
   const invoicesCollectionRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return collection(firestore, `companies/${user.uid}/invoices`);
   }, [firestore, user]);
 
   const expensesCollectionRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return collection(firestore, `companies/${user.uid}/expenses`);
   }, [firestore, user]);
 

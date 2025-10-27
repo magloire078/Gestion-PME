@@ -59,6 +59,14 @@ export function useDoc<T = any>(
       return;
     }
 
+    if (memoizedDocRef && !memoizedDocRef.__memo) {
+      const errorMessage = `useDoc received a document reference that was not created with useMemoFirebase. This can cause infinite loops and performance issues. Path: "${memoizedDocRef.path}"`;
+      console.error(errorMessage, memoizedDocRef);
+      const devError = new Error(errorMessage);
+      setError(devError);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -91,10 +99,6 @@ export function useDoc<T = any>(
 
     return () => unsubscribe();
   }, [memoizedDocRef, key]); // Re-run if the memoizedDocRef or key changes.
-
-  if(memoizedDocRef && !memoizedDocRef.__memo) {
-    throw new Error(memoizedDocRef + ' was not properly memoized using useMemoFirebase');
-  }
 
   return { data, isLoading, error, mutate };
 }
