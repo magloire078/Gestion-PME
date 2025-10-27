@@ -169,14 +169,21 @@ export const useStorage = (): FirebaseStorage => {
 
 type MemoFirebase <T> = T & {__memo?: boolean};
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
-  const memoized = useMemo(factory, deps);
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
+    const memoized = useMemo(factory, deps);
   
-  if(typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as MemoFirebase<T>).__memo = true;
-  
-  return memoized;
+    if(memoized && typeof memoized === 'object') {
+        Object.defineProperty(memoized, '__memo', {
+            value: true,
+            writable: false,
+            enumerable: false,
+            configurable: false
+        });
+    }
+    
+    return memoized;
 }
+
 
 /**
  * Hook specifically for accessing the authenticated user's state.
